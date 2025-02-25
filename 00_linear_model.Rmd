@@ -1,0 +1,135 @@
+---
+title: "Super League Analysis PaLeSt"
+subtitle: "[Public GitHub Repository](https://github.com/paACode/superleague_analysis_palest)"
+author: "Pascal Ackermann, Leonard Dost, Stefan Dreyfus"
+date: "25.02.2025"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+---
+
+```{r Document Settings, echo=FALSE , include=FALSE}
+## Document related Settings and Libs
+require(knitr) 
+
+## general language settings
+Sys.setenv(LANG = "en")
+
+## Default Settings for R-Chunks
+opts_chunk$set(echo = FALSE ,
+               include = FALSE,
+               comment = NA,
+               eval = TRUE,
+               message = FALSE,
+               warning = FALSE)
+```
+
+# Preprocessing
+
+The raw .csv had many "-". This lead R to detect the column as Factor with many levels instead of 
+numeric. In order to handle this some preprocessing was done in Linux Shell
+
+sed 's/-/0/g' super_league_dataset.csv > super_league_dataset_preprocessed.csv
+
+```{r Import}
+## import required libraries 
+require(dplyr)      # for data wrangling
+require(ggplot2)    # for plotting
+require(tidyr)
+
+## import  data
+d.super_league <- read.csv("super_league_dataset_preprocessed.csv")
+```
+
+A prediction model for goals based on live game actions and statistics can be very interesting for sports bet betting
+
+```{r First Overview}
+## Creating a subsed of RV and IV that are interesting
+d.super_league_subset <-  d.super_league %>% 
+  select(Tore, Spiele.zu.Null, # RV
+         Schüsse, Erfolgreiche.Tacklings, Gefoult.worden, Abseits, Alter, #Numeric IV
+         Klub, Position, Saison) %>%  # Categorical IV
+  drop_na()
+
+
+pairs(d.super_league_subset %>% select(where(is.numeric))) # Pairs only handles numeric IV
+  
+```
+
+```{r Comparing Clubs Boxplor}
+d.super_league_subset$Klub <- as.factor(d.super_league_subset$Klub)
+
+boxplot(Tore ~ Klub,data = d.super_league_subset, las =2)
+  
+```
+Now we want to see if the goals score is different among the football clubs, to see if there is a club producing the most successfull players in terms of goals
+
+```{r Comparing Clubs Linear Mode, include=TRUE}
+
+lm.clubs.1 <- lm(Tore ~Klub , data = d.super_league_subset)
+summary(lm.clubs.1)
+  
+```
+In average Young Boys Players score 2.6 Goals per season 21/22 until 24/25.
+
+- The is strong evidence that FC Zurich players performed worse than YB and only scored `r 2.6825- 1.7170` goals per player in average.
+- TBD: Further interesting Clubs which seem to be significant
+
+
+With anova we now check if there is really a statistical difference between the average goal score among the clubs and indeed it is. For the cost of 11 new variables the RSS ( Sum of Squares) reduces.
+
+
+```{r Model significant?, include=TRUE}
+
+lm.clubs.0 <- lm(formula = Tore ~ 1 , data = d.super_league_subset)
+anova(lm.clubs.0, lm.clubs.1)
+  
+```
+
+It is quite clear that the score rates differ between YB and FC Zurich
+
+```{r YB vs Zurich, include=TRUE}
+
+require(multcomp)
+ph.test.1 <- glht(model = lm.clubs.1, 
+                  linfct = mcp(Klub = c(" `BSC Young Boys` - `FC Zürich` = 0")))
+
+
+
+summary(ph.test.1)
+  
+```
+On the other hand we do not have strong evidence that FC Luzern  players scores better than FC zurich 
+( Probably because there are some player at FC Zurich which are very good --> bigger spread in data)
+
+```{r Luzern vs Zurich, include=TRUE}
+
+require(multcomp)
+ph.test.2 <- glht(model = lm.clubs.1, 
+                  linfct = mcp(Klub = c(" `FC Zürich` - `FC Luzern` = 0")))
+
+
+
+summary(ph.test.2)
+  
+```
+Now we refine the model and add the Position and Season to the model
+
+```{r A More complex model, include=TRUE}
+
+
+lm.refined.1 <- update(lm.clubs.1, . ~ . + Saison + Position)
+
+formula(lm.refined.1)
+
+
+drop1(lm.refined.1, test ="F")
+```
+Here we see that if we drop Position we loose a lot of RSS. This means that positions says a lot about the goal score of a player. This makes obviously sence because an offensive player score more goals than a goal keeper
+
+
