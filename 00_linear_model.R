@@ -8,18 +8,11 @@ d.superleague <- read.csv("super_league_dataset.csv")
 
 str(d.superleague) # Fits requirements for dataset
 
-## Data Preprocessing ####
-##TODO: Cleaninf of all the datatypes
-d.clean <- d.superleague %>%
-  mutate_all(~ replace(., . == "-", 0)) # Replace - with 0
-
-# Dataset needs quite some fixing. Most numeric values are saved as character!!!
-
 
 ## First Overview ####
 
 ## Fixing Datatypes from Character to Numeric  --> not all done yet!!!!
-d.forpairs <- d.clean %>%
+d.forpairs <- d.superleague %>%
   mutate(
     Tore = as.numeric(Tore), 
     Schüsse = as.numeric(Schüsse),) %>% 
@@ -47,7 +40,7 @@ ggplot(d.forpairs, aes(x = Schüsse, y = Tore)) +
 
 ## Datensatz vorbereiten mit ersten 5  möglichen einflüssen
 
-d.firstmodel <- d.clean %>%
+d.firstmodel <- d.superleague %>%
   mutate(
     Tore = as.numeric(Tore), 
     Schüsse = as.numeric(Schüsse),
