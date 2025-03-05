@@ -56,3 +56,6 @@ rsconnect/
 *.tflx
 *.DS_Store
 *.Rproj
+
+*.sqlite
+*.zip
