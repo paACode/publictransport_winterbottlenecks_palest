@@ -10,5 +10,9 @@ Das ist meine zweite Änderung.
 
 
 
-Stefan: Gelöscht, geändert, gepusht
+Stefan: Hoffentlich klappt es jetzt
+
+Pascal: 
+1) Mein erster commit in branch
+2) Mein zweiter Commit in branch
 
