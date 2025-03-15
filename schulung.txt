@@ -8,4 +8,29 @@ Das ist meine zweite Änderung.
 
 
 
-Stefan: Gelöscht, geändert, gepusht
+Stefan: 
+
+#Creating a column with delay
+
+library(dplyr)
+library(lubridate)
+
+
+Zentralbahn_Sarnen.delay <- Zentralbahn_Sarnen %>%
+  mutate(
+    ANKUNFTSZEIT = dmy_hm(ANKUNFTSZEIT),  # Convert to datetime
+    AN_PROGNOSE = dmy_hms(AN_PROGNOSE),   # Convert to datetime
+    Delay = as.numeric(difftime(AN_PROGNOSE, ANKUNFTSZEIT, units = "secs"))  # Convert delay to numeric seconds
+  ) %>%
+  mutate(
+    Delay_decimal = Delay / 60  # Convert delay to minutes as a decimal
+  )
+
+View(Zentralbahn_Sarnen.delay)
+
+#Filter bigger delay than 3 min. 
+
+Zentralbahn_Sarnen.delay_filtered <- Zentralbahn_Sarnen.delay %>%
+  filter(Delay > 180)
+
+View(Zentralbahn_Sarnen.delay_filtered)
