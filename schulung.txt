@@ -1,13 +1,3 @@
-Pascal: Ich habe etwas geämder,
-ich habe nochmals was geändert
-
-
-
-Leo: Ich hab auch was geändert.
-Das ist meine zweite Änderung.
-
-
-
 Stefan: 
 
 #Creating a column with delay
