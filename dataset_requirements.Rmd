@@ -3,9 +3,40 @@ title: "dataset_requirements"
 output: html_document
 ---
 
-As a first step the data from November 2024 were downloaded [click here for download](https://archive.opentransportdata.swiss/istdaten/2024/ist-daten-2024-11.zip). 
+As a first step the data from November 2024 were downloaded from the [opentransport archive](https://archive.opentransportdata.swiss/actual_data_archive.html)
 
-As a starting point we only look at the data from 02.11.2024
+
+```{r Download Data}
+url <-"https://archive.opentransportdata.swiss/istdaten/2024/ist-daten-2024-11.zip"
+destination_folder <- file.path(getwd(), "raw_data")
+destination_zip <- file.path(destination_folder, "ist-daten-2024-11.zip")
+unzipped_folder <- file.path(destination_folder, "ist-daten-2024-11")
+
+
+is_already_downloaded <- function() {
+  csv_files <- list.files(file.path(destination_folder, "ist-daten-2024-11"), pattern = "\\.csv$")
+  if(length(csv_files)== 30){
+    return(TRUE)
+  }
+  else{
+    return(FALSE)
+  }
+}
+  
+if (is_already_downloaded()){
+  print("Raw Data already downloaded")
+}else{
+  print("Download and unzip takes a few minutes")
+  
+  
+  dir.create(destination_folder, showWarnings = FALSE, recursive = TRUE) 
+  download.file(url, destination_zip , mode = "wb")
+  unzip(destination_zip, exdir = unzipped_folder)
+}
+
+
+```
+
 
 
 

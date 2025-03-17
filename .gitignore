@@ -56,3 +56,5 @@ rsconnect/
 *.tflx
 *.DS_Store
 *.Rproj
+
+raw_data
