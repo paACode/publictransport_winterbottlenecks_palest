@@ -1,0 +1,67 @@
+---
+title: "dataset_requirements"
+output: html_document
+---
+
+As a first step the data from November 2024 were downloaded [click here for download](https://archive.opentransportdata.swiss/istdaten/2024/ist-daten-2024-11.zip). 
+
+As a starting point we only look at the data from 02.11.2024
+
+
+
+```{r Inspect Data}
+data <-  read.csv(file = "2024-11-02_istdaten.csv", sep =";", head=TRUE )
+str(data)
+```
+
+```{r Only look at vbl data to make analysis faster}
+library(dplyr)
+only_vbl <-  data %>% 
+  filter(BETREIBER_ABK == "VBL")
+```
+
+
+
+
+```{r Define Datatypes}
+vbl_data <- only_vbl %>%
+  mutate(
+    BETRIEBSTAG= as.Date(BETRIEBSTAG, format = "%d.%m.%Y"),
+    FAHRT_BEZEICHNER = FAHRT_BEZEICHNER, # ???
+    BETREIBER_ID = BETREIBER_ID, # ???
+    BETREIBER_ABK = as.factor(BETREIBER_ABK), 
+    BETREIBER_NAME = as.factor(BETREIBER_NAME), # ZVV, ZVA, etc
+    PRODUKT_ID = as.factor(PRODUKT_ID),  # Zug , Bus etc
+    LINIEN_ID = LINIEN_ID, # ???
+    LINIEN_TEXT = as.factor(LINIEN_TEXT), # S26, IR16 etc
+    UMLAUF_ID = UMLAUF_ID, # ???
+    VERKEHRSMITTEL_TEXT = as.factor(VERKEHRSMITTEL_TEXT),
+    ZUSATZFAHRT_TF = as.logical(ZUSATZFAHRT_TF), 
+    FAELLT_AUS_TF = as.logical(FAELLT_AUS_TF),
+    BPUIC = BPUIC, # ???
+    HALTESTELLEN_NAME = as.factor(HALTESTELLEN_NAME),
+    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT, format = "%d.%m.%Y %H:%M" ),
+    AN_PROGNOSE = as.POSIXct(AN_PROGNOSE, format = "%d.%m.%Y %H:%M:%S"),
+    AN_PROGNOSE_STATUS = as.factor(AN_PROGNOSE_STATUS),
+    ABFAHRTSZEIT = as.POSIXct(ABFAHRTSZEIT, format = "%d.%m.%Y %H:%M" ),
+    AB_PROGNOSE = as.POSIXct(AN_PROGNOSE,  format = "%d.%m.%Y %H:%M:%S"),
+    AB_PROGNOSE_STATUS = as.factor(AB_PROGNOSE_STATUS), 
+    DURCHFAHRT_TF = as.logical(DURCHFAHRT_TF)
+    
+  )
+
+str(vbl_data)
+```
+
+
+```{r Only look at vbl delays}
+
+vbl_data_with_delay <- vbl_data  %>% 
+  mutate(time_diff = difftime(AB_PROGNOSE, ABFAHRTSZEIT))
+
+
+plot(vbl_data_with_delay$time_diff)
+
+
+```
+
