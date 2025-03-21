@@ -3,7 +3,6 @@ title: "First tries with Artificial Neural Networks"
 author: "Pascal Ackermann"
 date: "21.03.2025"
 output:
-  pdf_document: default
   html_document: default
 ---
 
