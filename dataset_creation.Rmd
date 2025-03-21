@@ -103,6 +103,21 @@ data.dtypes <- raw_data %>%
 str(data.dtypes)
 ```
 
+```{r  Remove Factors with only one level}
+# See current state
+factor_levels <- sapply(data.dtypes, function(x) if(is.factor(x)) levels(x) else NULL)
+# Print the factor levels
+factor_levels
+
+#Remove Factors with only one level --> "ZB, "ZENTRAHLBAHN" , "ZUG"
+data.dtypes <- data.dtypes[, sapply(data.dtypes, function(x) !(is.factor(x) && length(levels(x)) == 1))]
+
+#Double Check
+factor_levels <- sapply(data.dtypes, function(x) if(is.factor(x)) levels(x) else NULL)
+# Print the factor levels
+factor_levels
+
+```
 
 ```{r  Add Delay and create dataset}
 data.delay <- data.dtypes  %>% 
@@ -112,6 +127,9 @@ data.delay <- data.dtypes  %>%
 write.csv(data.delay, "zentrahlbahn_nov_dataset_delay.csv", row.names = FALSE)
 
 ```
+
+
+
 
 
 
