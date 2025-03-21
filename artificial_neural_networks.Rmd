@@ -39,7 +39,10 @@ d.zentralbahn <- read.csv("zentrahlbahn_nov_dataset_delay.csv", sep =",", head=T
 []
 
 Looks like i the beginning and end of november there are a bit less "Ausfälle".
-Also what we can see is that there is a periodic behaviour ( Saturdays and Sundays). Because at weekends there are less traings
+Also what we can see is that there is a periodic behaviour ( Saturdays and Sundays). Because at weekends there are less trains. The sudden change of less Ausfälle could be related to the following link:
+
+https://www.zentralbahn.ch/de/kennenlernen/die-zentralbahn/einblicke/wiedereroeffnung-der-strecke-meiringen-interlaken-ost-am-25-november-2024
+
 
 ```{r}
 d.zentralbahn %>%
@@ -47,7 +50,7 @@ d.zentralbahn %>%
   geom_histogram(stat = "count",position = "dodge")
 ```
 
- In this plot we can clearly see that R70 and R71 "Fallen aus" more than they arriv on time. Is probably related to unglück in brienz
+ In this plot we can clearly see that R70 and R71 "Fallen aus" more than they arriv on time. This is also very likely related to the Link of the Strecke Meiringe-Interlaken Ost
 ```{r}
 d.zentralbahn %>%
   ggplot(aes(x = LINIEN_TEXT, fill = FAELLT_AUS_TF)) +
@@ -69,9 +72,6 @@ d.zentralbahn.dt <- d.zentralbahn %>%
     BETRIEBSTAG= as.Date(BETRIEBSTAG, format = "%d.%m.%Y"),
     FAHRT_BEZEICHNER = FAHRT_BEZEICHNER, # ???
     BETREIBER_ID = BETREIBER_ID, # ???
-    BETREIBER_ABK = as.factor(BETREIBER_ABK), 
-    BETREIBER_NAME = as.factor(BETREIBER_NAME), # ZVV, ZVA, etc
-    PRODUKT_ID = as.factor(PRODUKT_ID),  # Zug , Bus etc
     LINIEN_ID = LINIEN_ID, # ???
     LINIEN_TEXT = as.factor(LINIEN_TEXT), # S26, IR16 etc
     UMLAUF_ID = UMLAUF_ID, # ???
@@ -92,28 +92,16 @@ d.zentralbahn.dt <- d.zentralbahn %>%
 ```
 
 
-# Remove columns with factors having only one level
-```{r}
-
-factor_levels <- sapply(d.zentralbahn.dt, function(x) if(is.factor(x)) levels(x) else NULL)
-# Print the factor levels
-factor_levels
-
-#Remove Factors with only one level --> "ZB, "ZENTRAHLBAHN" , "ZUG"
-d.zentralbahn <- d.zentralbahn[, sapply(d.zentralbahn, function(x) !(is.factor(x) && length(levels(x)) == 1))]
-```
-
-
 
 
 ```{r}
 set.seed(123)
-is_train <- runif(nrow(d.zentralbahn)) < 0.8
+is_train <- runif(nrow(d.zentralbahn.dt)) < 0.8
 mean(is_train)
 ```
 ```{r}
-train <- d.zentralbahn[is_train, ]
-test <- d.zentralbahn[!is_train, ]
+train <- d.zentralbahn.dt[is_train, ]
+test <- d.zentralbahn.dt[!is_train, ]
 ```
 
 
