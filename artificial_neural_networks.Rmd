@@ -1,0 +1,59 @@
+---
+title: "First tries with Artificial Neural Networks"
+author: "Pascal Ackermann"
+date: "21.03.2025"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading the Packages
+
+For this example we use the `nnet` package (and `gamlss.add` to plot these networks) and `ggplot2` to create some plots.
+
+```{r}
+library(nnet)
+library(gamlss.add)
+library(dplyr)
+library(ggplot2)
+theme_set(theme_bw())
+```
+
+And we also need the `caret` package for some helper functions
+
+```{r}
+library(caret)
+```
+
+## Loading the Data
+
+```{r}
+d.zentralbahn <- read.csv("zentrahlbahn_nov_dataset_delay.csv", sep =",", head=TRUE )
+```
+
+## A first look at the Data "Ausfälle"
+
+[]
+
+Looks like i the beginning and end of november there are a bit less "Ausfälle".
+Also what we can see is that there is a periodic behaviour ( Saturdays and Sundays). Because at weekends there are less traings
+
+```{r}
+d.zentralbahn %>%
+  ggplot(aes(x = BETRIEBSTAG, fill = FAELLT_AUS_TF)) +
+  geom_histogram(stat = "count",position = "dodge")
+```
+
+ In this plot we can clearly see that R70 and R71 "Fallen aus" more than they arriv on time. Is probably related to unglück in brienz
+```{r}
+d.zentralbahn %>%
+  ggplot(aes(x = LINIEN_TEXT, fill = FAELLT_AUS_TF)) +
+  geom_histogram(stat = "count",position = "dodge")
+```
+
+
+![Data Visualization](Streckennetz_Zentralbahn.png)
