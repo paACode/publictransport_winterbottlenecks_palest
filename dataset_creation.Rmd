@@ -1,0 +1,118 @@
+---
+title: "dataset_requirements"
+output: html_document
+---
+
+As a first step the data from November 2024 were downloaded from the [opentransport archive](https://archive.opentransportdata.swiss/actual_data_archive.html).
+
+
+```{r Download Data}
+url <-"https://archive.opentransportdata.swiss/istdaten/2024/ist-daten-2024-11.zip"
+destination_folder <- file.path(getwd(), "raw_data")
+destination_zip <- file.path(destination_folder, "ist-daten-2024-11.zip")
+unzipped_folder <- file.path(destination_folder, "ist-daten-2024-11")
+
+
+is_already_downloaded <- function() {
+  csv_files <- list.files(file.path(destination_folder, "ist-daten-2024-11"), pattern = "\\.csv$")
+  if(length(csv_files)== 30){
+    return(TRUE)
+  }
+  else{
+    return(FALSE)
+  }
+}
+  
+if (is_already_downloaded()){
+  print("Raw Data already downloaded")
+}else{
+  print("Download and unzip takes a few minutes")
+  
+  
+  dir.create(destination_folder, showWarnings = FALSE, recursive = TRUE) 
+  download.file(url, destination_zip , mode = "wb")
+  unzip(destination_zip, exdir = unzipped_folder)
+}
+
+
+```
+The data focused on in this project pertains to trains from Zentralbahn in November, with appropriate filters selected to yield a resulting dataset of 91'271 entries, a moderate size (< 10^5), making it an ideal choice for analysis.
+
+```{r Filter and merge Data}
+library(dplyr)
+
+if (file.exists("zentrahlbahn_nov_dataset.csv")){
+  print("Zentrahlbahn dataset has already been created")
+}else{
+  print("Creation of Zentrahlbahn dataset might take a few minutes")
+  csv_files <- list.files(file.path(destination_folder, "ist-daten-2024-11"), pattern = "\\.csv$")
+  
+  merged_data <-  data_frame()
+  for(csv_file in csv_files){
+    file_name <- file.path(unzipped_folder, csv_file)
+    data <-  read.csv(file = file_name, sep =";", head=TRUE)
+    
+    tmp_filtered <- data %>% 
+      filter(PRODUKT_ID == "Zug") %>% 
+      filter(BETREIBER_ABK == "ZB") %>% 
+      filter(HALTESTELLEN_NAME != "" & !is.na(HALTESTELLEN_NAME)) 
+    
+    merged_data <-  rbind(merged_data, tmp_filtered)
+  } 
+  
+  write.csv(merged_data, "zentrahlbahn_nov_dataset_raw.csv", row.names = FALSE)
+  
+}
+
+```
+
+```{r Inspect Raw Data}
+raw_data <-  read.csv(file = "zentrahlbahn_nov_dataset_raw.csv", sep =",", head=TRUE )
+str(raw_data)
+```
+To simplify calculations, the data types were manually set, as the raw dataset treats all data as characters.
+
+```{r Define Datatypes}
+library(dplyr)
+data.dtypes <- raw_data %>%
+  mutate(
+    BETRIEBSTAG= as.Date(BETRIEBSTAG, format = "%d.%m.%Y"),
+    FAHRT_BEZEICHNER = FAHRT_BEZEICHNER, # ???
+    BETREIBER_ID = BETREIBER_ID, # ???
+    BETREIBER_ABK = as.factor(BETREIBER_ABK), 
+    BETREIBER_NAME = as.factor(BETREIBER_NAME), # ZVV, ZVA, etc
+    PRODUKT_ID = as.factor(PRODUKT_ID),  # Zug , Bus etc
+    LINIEN_ID = LINIEN_ID, # ???
+    LINIEN_TEXT = as.factor(LINIEN_TEXT), # S26, IR16 etc
+    UMLAUF_ID = UMLAUF_ID, # ???
+    VERKEHRSMITTEL_TEXT = as.factor(VERKEHRSMITTEL_TEXT),
+    ZUSATZFAHRT_TF = as.logical(ZUSATZFAHRT_TF), 
+    FAELLT_AUS_TF = as.logical(FAELLT_AUS_TF),
+    BPUIC = BPUIC, # ???
+    HALTESTELLEN_NAME = as.factor(HALTESTELLEN_NAME),
+    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT, format = "%d.%m.%Y %H:%M" ),
+    AN_PROGNOSE = as.POSIXct(AN_PROGNOSE, format = "%d.%m.%Y %H:%M:%S"),
+    AN_PROGNOSE_STATUS = as.factor(AN_PROGNOSE_STATUS),
+    ABFAHRTSZEIT = as.POSIXct(ABFAHRTSZEIT, format = "%d.%m.%Y %H:%M" ),
+    AB_PROGNOSE = as.POSIXct(AN_PROGNOSE,  format = "%d.%m.%Y %H:%M:%S"),
+    AB_PROGNOSE_STATUS = as.factor(AB_PROGNOSE_STATUS), 
+    DURCHFAHRT_TF = as.logical(DURCHFAHRT_TF)
+    
+  )
+
+str(data.dtypes)
+```
+
+
+```{r  Add Delay and create dataset}
+data.delay <- data.dtypes  %>% 
+  mutate(ABFAHRTDELAY = difftime(AB_PROGNOSE, ABFAHRTSZEIT)) %>% 
+  mutate(ANKUNFTDELAY = difftime(AN_PROGNOSE, ANKUNFTSZEIT))
+
+write.csv(data.delay, "zentrahlbahn_nov_dataset_delay.csv", row.names = FALSE)
+
+```
+
+
+
+
