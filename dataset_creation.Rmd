@@ -109,7 +109,7 @@ data.delay <- data.dtypes  %>%
   mutate(ABFAHRTDELAY = difftime(AB_PROGNOSE, ABFAHRTSZEIT)) %>% 
   mutate(ANKUNFTDELAY = difftime(AN_PROGNOSE, ANKUNFTSZEIT))
 
-write.csv(data.delay, "zentrahlbahn_nov_dataset_raw.csv", row.names = FALSE)
+write.csv(data.delay, "zentrahlbahn_nov_dataset_delay.csv", row.names = FALSE)
 
 ```
 
