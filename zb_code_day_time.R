@@ -55,4 +55,4 @@ print(table(zentralbahn_TAGESZEIT$Pendler_Rush_Hour, useNA = "always"))
 View(zentralbahn_TAGESZEIT)
 
 # Save to CSV
-write.csv(zentralbahn_TAGESZEIT, "zentralbahn_TAGESZEIT.csv", row.names = FALSE)
+write.csv(zentralbahn_TAGESZEIT, "zentralbahn_day_time.csv", row.names = FALSE)
