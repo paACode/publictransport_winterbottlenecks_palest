@@ -26,7 +26,26 @@ zentralbahn_day_time <- zentralbahn_day_time %>%
       TRUE ~ NA_character_  # Handles missing or unexpected values
     )
   )
+
+# Ensure Hour_Ankunft is numeric
+zentralbahn_day_time <- zentralbahn_day_time %>%
+  mutate(Hour_Ankunft = as.numeric(Hour_Ankunft)) 
+
+# Add Pendler_Rush_Hour classification
+zentralbahn_day_time <- zentralbahn_day_time %>%
+  mutate(
+    Pendler_Rush_Hour = case_when(
+      !is.na(Hour_Ankunft) & Hour_Ankunft >= 6 & Hour_Ankunft <= 8  ~ "vormittag.pendler.rush.hour",
+      !is.na(Hour_Ankunft) & Hour_Ankunft >= 17 & Hour_Ankunft <= 18 ~ "abend.pendler.rush.hour",
+      TRUE ~ NA_character_  # Assign NA to other hours
+    )
+  )
+
+str(zentralbahn_day_time)
+
 View (zentralbahn_day_time)
 
 write.csv(zentralbahn_day_time, "zentralbahn_day_time.csv", row.names = FALSE)
+
+
 
