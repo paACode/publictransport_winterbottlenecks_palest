@@ -41,9 +41,10 @@ print(table(zentralbahn_day_time$Hour_Ankunft, useNA = "always"))
 zentralbahn_day_time <- zentralbahn_day_time %>%
   mutate(
     Pendler_Rush_Hour = case_when(
-      Hour_Ankunft %in% c(6, 7, 8) ~ "vormittag.pendler.rush.hour",
-      Hour_Ankunft %in% c(17, 18)  ~ "abend.pendler.rush.hour",
-      TRUE ~ NA_character_  # Assign NA to other hours
+      is.na(Hour_Ankunft) ~ NA_character_,  # If no arrival hour, keep NA
+      Hour_Ankunft >= 6 & Hour_Ankunft <= 8  ~ "vormittag.pendler.rush.hour",
+      Hour_Ankunft >= 17 & Hour_Ankunft <= 18 ~ "abend.pendler.rush.hour",
+      TRUE ~ "keine.pendler.rush.hour"  # Everything else gets "keine.pendler.rush.hour"
     )
   )
 
@@ -55,7 +56,3 @@ View(zentralbahn_day_time)
 
 # Save to CSV
 write.csv(zentralbahn_day_time, "zentralbahn_day_time.csv", row.names = FALSE)
-
-
-head(zentralbahn_day_time)
-
