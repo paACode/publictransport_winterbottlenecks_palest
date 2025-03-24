@@ -120,16 +120,35 @@ factor_levels
 ```
 
 ```{r  Add Delay and create dataset}
-data.delay <- data.dtypes  %>% 
-  mutate(ABFAHRTDELAY = difftime(AB_PROGNOSE, ABFAHRTSZEIT)) %>% 
-  mutate(ANKUNFTDELAY = difftime(AN_PROGNOSE, ANKUNFTSZEIT))
+data.delay <- data.dtypes %>% 
+  mutate(ABFAHRTDELAY_sec = difftime(AB_PROGNOSE, ABFAHRTSZEIT, units = "secs"),
+         ABFAHRTDELAY_min = difftime(AB_PROGNOSE, ABFAHRTSZEIT, units = "mins"),
+         ANKUNFTDELAY_sec = difftime(AN_PROGNOSE, ANKUNFTSZEIT, units = "secs"),
+         ANKUNFTDELAY_min = difftime(AN_PROGNOSE, ANKUNFTSZEIT, units = "mins"))
 
-write.csv(data.delay, "zentrahlbahn_nov_dataset_delay.csv", row.names = FALSE)
+#write.csv(data.delay, "zentrahlbahn_nov_dataset_delay.csv", row.names = FALSE)
+head(data.delay)
+```
+
+```{r Add Train Start / Stop Locations}
+
+data.processed <- data.delay %>% 
+  # Group by train ID (FAHRT_BEZEICHNER)
+  group_by(FAHRT_BEZEICHNER) %>%
+  mutate(
+    # For START, take the HALTESTELLEN_NAME where both ANKUNFTSZEIT and AN_PROGNOSE are missing
+    START = first(as.character(HALTESTELLEN_NAME)[is.na(ANKUNFTSZEIT) & is.na(AN_PROGNOSE)]),
+    # For ZIEL, take the HALTESTELLEN_NAME where both ABFAHRTSZEIT and AB_PROGNOSE are missing
+    ZIEL  = first(as.character(HALTESTELLEN_NAME)[is.na(ABFAHRTSZEIT)])
+  ) %>%
+  ungroup()
+  
 
 ```
 
+```{r}
 
-
+```
 
 
 
