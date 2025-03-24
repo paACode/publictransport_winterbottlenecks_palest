@@ -310,3 +310,6 @@ print(data.main)
 
 ```
 
+```{r write final file}
+  write.csv(data.main, "zentrahlbahn_final.csv", row.names = FALSE)
+```
