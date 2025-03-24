@@ -1,0 +1,57 @@
+---
+title: "Public Transport Winterbottlenecks"
+subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport_winterbottlenecks_palest)"
+author: "Leonard, Stefan, Pascal"
+date: "24.03.2025"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+---
+
+
+```{r, echo=FALSE , include=FALSE}
+## Document related Settings and Libs
+require(knitr) 
+require(details)    # allows collapsible code blocks
+require(gt)         # formats tables nicely
+
+## general language settings
+Sys.setenv(LANG = "en")
+
+## Default Settings for R-Chunks
+opts_chunk$set(echo = FALSE ,
+               include = FALSE,
+               comment = NA,
+               eval = TRUE,
+               message = FALSE,
+               warning = FALSE)
+```
+
+
+# Lorem Ipsum Title
+
+Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+
+```{r R Chunk Example 1 : I am not included in the Document at all}
+
+a= 5
+print(a)
+```
+
+```{r Chunk Example 2 : My result is included in the Document, include=TRUE}
+
+a= 5
+print(a)
+```
+
+
+```{r Chunk Example 3 : My code and result is included in the Document, include=TRUE, echo=TRUE}
+
+a= 5
+print(a)
+```
