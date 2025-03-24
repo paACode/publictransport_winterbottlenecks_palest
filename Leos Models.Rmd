@@ -1,0 +1,148 @@
+---
+title: "Leos Models"
+author: "Leonard Dost"
+date: "2025-03-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(data.processed)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+str(data.processed)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r First exploration of the data}
+#import(ggplot)
+data.processed %>% 
+  ggplot(aes(x = data.processed$ANKUNFTDELAY_min, y = data.processed$LINIEN_TEXT)) + 
+  geom_point()
+
+```
+```{r Define Delay Categories}
+# Define the delay categories
+data.processed <- data.processed %>%
+  mutate(Delay_Category = case_when(
+    ANKUNFTDELAY_min <= 3 ~ "On Time",
+    ANKUNFTDELAY_min >= 4 & ANKUNFTDELAY_min <= 10 ~ "Minor Delay",
+    ANKUNFTDELAY_min >= 11 & ANKUNFTDELAY_min <= 20 ~ "Moderate Delay",
+    ANKUNFTDELAY_min >= 21 & ANKUNFTDELAY_min <= 29 ~ "Significant Delay",
+    ANKUNFTDELAY_min < 0 ~ "Early Arrival",  # Optional: For early arrivals
+    TRUE ~ "Unknown"  # Fallback for unexpected values
+  ))
+
+
+```
+```{r plots}
+## Train Text against Ankunfts_Delay
+data.processed %>% 
+  ggplot(aes(x = data.processed$ANKUNFTDELAY_min, y = data.processed$LINIEN_TEXT, color = data.processed$Delay_Category)) + 
+  geom_point()
+
+## Train Haltestelle against Ankunfts_Delay
+data.processed %>% 
+  ggplot(aes(x = data.processed$ANKUNFTDELAY_min, y = data.processed$HALTESTELLEN_NAME, color = data.processed$Delay_Category)) + 
+  geom_point() 
+  #geom_jitter()
+
+## Date against Ankunfts_Delay
+data.processed %>% 
+  ggplot(aes(x = data.processed$ANKUNFTDELAY_min, y = data.processed$BETRIEBSTAG, color = data.processed$Delay_Category)) + 
+  geom_point()
+
+
+data.processed %>% 
+  ggplot(aes(x = data.processed$ANKUNFTDELAY_min, y = data.processed$ZIEL, color = data.processed$Delay_Category)) + 
+  geom_point()
+
+```
+## Prepare the Data for Training
+
+```{r}
+
+set.seed(123)
+indices <- createDataPartition(data.processed$Delay_Category, p=.85, list = F)
+
+```
+
+### Create some easy Variables to access Data
+
+```{r}
+train <- data.processed %>%
+  slice(indices)
+test_in <- data.processed %>%
+  slice(-indices) %>%
+  select(-Delay_Category)
+test_truth <- data.processed %>%
+  slice(-indices) %>%
+  pull(Delay_Category)
+```
+
+## Train the Support Vector Machine
+
+Call the `svm` function using the default `cost = 10` parameter.
+
+```{r}
+# Load necessary libraries
+library(dplyr)  # For data manipulation
+library(caret)  # For one-hot encoding
+library(lubridate)  # For date/time manipulation
+
+train$Delay_Category <- as.factor(train$Delay_Category)
+class(train$Delay_Category)  # Check if it's a factor
+levels(train$Delay_Category)  # Check the levels
+unique(train$Delay_Category)  # Check unique values
+
+sapply(train, function(x) length(unique(x)))
+
+# maniputlate dataset in order to use svm
+##Remove columns with only one unique value
+train <- train %>% select(-BETREIBER_ID, -UMLAUF_ID)
+
+##Convert binary columns (ZUSATZFAHRT_TF, FAELLT_AUS_TF, DURCHFAHRT_TF) to numeric (0/1).
+train <- train %>%
+  mutate(
+    ZUSATZFAHRT_TF = as.numeric(ZUSATZFAHRT_TF),
+    FAELLT_AUS_TF = as.numeric(FAELLT_AUS_TF),
+    DURCHFAHRT_TF = as.numeric(DURCHFAHRT_TF)
+  )
+
+##Use one-hot encoding for categorical columns with many levels.
+library(caret)
+dummy <- dummyVars(" ~ .", data = train)
+train_encoded <- predict(dummy, newdata = train)
+train_encoded <- as.data.frame(train_encoded))
+
+##Extract useful features from date/time columns or remove them if not needed.
+train <- train %>%
+  mutate(
+    BETRIEBSTAG = as.Date(BETRIEBSTAG),
+    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT),
+    ABFAHRTSZEIT = as.POSIXct(ABFAHRTSZEIT),
+    Day_of_Week = weekdays(BETRIEBSTAG),
+    Hour_of_Day = hour(ANKUNFTSZEIT)
+  ) %>%
+  select(-BETRIEBSTAG, -ANKUNFTSZEIT, -AN_PROGNOSE, -ABFAHRTSZEIT, -AB_PROGNOSE)
+
+
+
+set.seed(123)
+data.processed_svm <- svm(Delay_Category ~ ., train, kernel = "linear", scale = TRUE, cost = 10)
+```
