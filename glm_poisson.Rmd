@@ -1,0 +1,122 @@
+---
+title: "GLM Poisson"
+subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport_winterbottlenecks_palest)"
+author:  "Pascal"
+date: "27.03.2025"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+---
+
+
+```{r, echo=FALSE , include=FALSE}
+## Document related Settings and Libs
+require(knitr) 
+require(details)    # allows collapsible code blocks
+require(gt)         # formats tables nicely
+
+## general language settings
+Sys.setenv(LANG = "en")
+
+## Default Settings for R-Chunks
+opts_chunk$set(echo = FALSE ,
+               include = FALSE,
+               comment = NA,
+               eval = TRUE,
+               message = FALSE,
+               warning = FALSE)
+```
+
+
+# Ideas for GLM Poisson
+
+For the GLM (Poisson) there is a Response Variable needed which is count data.
+As there are none present in the dataset an ideas was to use the the binary varibale
+FEALLT_AUS_TF and count observations where there was a cancellation of the connection
+
+
+```{r Import and Filter Data  }
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(forcats) 
+
+#### Read in Data ####----------------------------------------------------------
+d.zentrahlbahn<- read.csv("zentrahlbahn_final.csv") %>% 
+  select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE,
+         ANKUNFTDELAY_sec, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_sec,
+         FAELLT_AUS_TF,  # Suggestion to use as Response Variable
+         Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_min_c_Luzern, w_temp_avg_c_Luzern)
+
+```
+
+In this first plot it looks like that the Train Stop could be a good predictor.
+The 14 Stations that have a much bigger delay are the ones which come after Meiringen.
+This is related to the natural disaster in Brienz,
+
+
+```{r Relation between Train Stop and Cancellations per Day, include=TRUE}
+
+### Make a Boxplot to see relation between Haltestelle AUSFEALLE PER DAY
+
+d.zentrahlbahn <- d.zentrahlbahn %>%
+  group_by(HALTESTELLEN_NAME, BETRIEBSTAG) %>%
+  mutate(
+    AUSFAELLE_PER_DAY = sum(FAELLT_AUS_TF),  # Count TRUE values of FEALLT_AUS per station
+    ) %>%
+  ungroup()
+
+
+ggplot(d.zentrahlbahn, aes(x =  fct_reorder(HALTESTELLEN_NAME, 
+                                            AUSFAELLE_PER_DAY,
+                                            median, na.rm = TRUE), 
+                           y = AUSFAELLE_PER_DAY)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(title = "Distribution of Failures per Day by Station", 
+       x = "Station", 
+       y = "Number of Failures (AUSFAELLE_PER_DAY)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+This are the Lines R70 and R71
+
+```{r Relation between Train Stop and Cancellations per Day, include=TRUE}
+
+### Make a Boxplot to see relation between Haltestelle AUSFEALLE PER DAY
+
+d.zentrahlbahn <- d.zentrahlbahn %>%
+  group_by(LINIEN_TEXT, BETRIEBSTAG) %>%
+  mutate(
+    AUSFAELLE_PER_DAY = sum(FAELLT_AUS_TF),  # Count TRUE values of FEALLT_AUS per station
+  ) %>%
+  ungroup()
+
+
+ggplot(d.zentrahlbahn, aes(x =  fct_reorder(LINIEN_TEXT, 
+                                            AUSFAELLE_PER_DAY,
+                                            median, na.rm = TRUE), 
+                           y = AUSFAELLE_PER_DAY)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(title = "Distribution of Failures per Day by Station", 
+       x = "Station", 
+       y = "Number of Failures (AUSFAELLE_PER_DAY)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r Chunk Example 3 : My code and result is included in the Document, include=TRUE, echo=TRUE}
+
+a= 5
+print(a)
+```
