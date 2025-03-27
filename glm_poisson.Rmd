@@ -87,7 +87,7 @@ ggplot(d.zentrahlbahn, aes(x =  fct_reorder(HALTESTELLEN_NAME,
 ```
 
 
-This are the Lines R70 and R71
+This are the Lines R70 and R71. So one easy predictor for AUSFAELLE is if the observation is on the blocked line or not.
 
 ```{r Relation between Train Stop and Cancellations per Day, include=TRUE}
 
