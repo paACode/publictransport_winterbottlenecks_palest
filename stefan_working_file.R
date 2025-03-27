@@ -60,3 +60,16 @@ summary(lm.temperature)
 "At midnight (00:00), the expected arrival delay is 42.92 seconds. For each additional hour later in the day, the delay decreases by 0.30 seconds on average."
 "The p-value is statistical significant and below so 0.05. Therefore we can be sure certain that it is not 0. So it have statistical significant effect."
 "However, the R^2 is very low, showing that the model doesnt represent well the reality. "
+
+#Simple regression model with additional predictor
+
+lm.temperature_updated <- lm(ANKUNFTDELAY_sec ~ ANKUNFTSZEIT_HOUR + w_temp_avg_c_Luzern , data = zb_final)
+
+summary(lm.temperature_updated)
+
+"The average delay is 47.9 sec if all the predictos are 0. 
+With every hour increase the delay reduces by -0.30 sec on average. The p-value is significiant below 0.05. Therefore, we have strong evidence Ankunftszeit_HOUR is statistically significant.
+With every increase in average temperature, the delay reduces by 0.95 sec on average. The p-value is significant below 0.05. Therefore, we have strong evidence that average temperature is statistically significant.
+R^2 shows that the two predictors almost dont explain the delay variance. There are much stronger factors affecting delay that are missing from the model"
+
+"Stopped at SW01 page 10"
