@@ -1,12 +1,106 @@
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(forcats) 
 
 #### Read in Data ####----------------------------------------------------------
 d.zentrahlbahn<- read.csv("zentrahlbahn_final.csv") %>% 
   select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE,
          ANKUNFTDELAY_sec, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_sec,
+         FAELLT_AUS_TF, ZUSATZFAHRT_TF,
          Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_min_c_Luzern, w_temp_avg_c_Luzern)
+
+### Make a Boxplot to see relation between Haltestelle AUSFEALLE PER DAY
+
+d.zentrahlbahn <- d.zentrahlbahn %>%
+  group_by(HALTESTELLEN_NAME, BETRIEBSTAG) %>%
+  mutate(
+    AUSFAELLE_PER_DAY = sum(FAELLT_AUS_TF),  # Count TRUE values of FEALLT_AUS per station
+    ) %>%
+  ungroup()
+
+
+ggplot(d.zentrahlbahn, aes(x =  fct_reorder(HALTESTELLEN_NAME, 
+                                            AUSFAELLE_PER_DAY,
+                                            median, na.rm = TRUE), 
+                           y = AUSFAELLE_PER_DAY)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(title = "Distribution of Failures per Day by Station", 
+       x = "Station", 
+       y = "Number of Failures (AUSFAELLE_PER_DAY)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# --> Looks like there is a relation between stations and Aufälle
+
+### Make a Boxplot to see relation between Linie and AUSFEALLE PER DAY
+
+d.zentrahlbahn <- d.zentrahlbahn %>%
+  group_by(LINIEN_TEXT, BETRIEBSTAG) %>%
+  mutate(
+    AUSFAELLE_PER_DAY = sum(FAELLT_AUS_TF),  # Count TRUE values of FEALLT_AUS per station
+  ) %>%
+  ungroup()
+
+
+ggplot(d.zentrahlbahn, aes(x =  fct_reorder(LINIEN_TEXT, 
+                                            AUSFAELLE_PER_DAY,
+                                            median, na.rm = TRUE), 
+                           y = AUSFAELLE_PER_DAY)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(title = "Distribution of Failures per Day by Station", 
+       x = "Station", 
+       y = "Number of Failures (AUSFAELLE_PER_DAY)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# --> Looks like there is a relation between stations and Aufälle
+
+
+
+
+#### Make a Boxplot to see relation between AUSFEALLE PER DAY and Tageszeit ####
+
+
+d.zentrahlbahn <- d.zentrahlbahn %>%
+  group_by(TAGESZEIT, BETRIEBSTAG) %>%
+  mutate(
+    AUSFAELLE_PER_DAY= sum(FAELLT_AUS_TF),  # Count TRUE values of FEALLT_AUS per station
+  ) %>%
+  ungroup()
+
+
+ggplot(d.zentrahlbahn, aes(x = TAGESZEIT, 
+                           y = AUSFAELLE_PER_DAY)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Failures per Day by Station", 
+       x = "Station", 
+       y = "Number of Failures (AUSFAELLE_PER_DAY)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# --> Looks like there is a relation between Daytime and Ausfälle
+
+
+#### Make a Boxplot to see relation between AUSFEALLE PER DAY RUushhour ####
+
+
+d.zentrahlbahn <- d.zentrahlbahn %>%
+  group_by(RUSH_HOUR, BETRIEBSTAG) %>%
+  mutate(
+    AUSFAELLE_PER_DAY= sum(FAELLT_AUS_TF),  # Count TRUE values of FEALLT_AUS per station
+  ) %>%
+  ungroup()
+
+
+ggplot(d.zentrahlbahn, aes(x = RUSH_HOUR, 
+                           y = AUSFAELLE_PER_DAY)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Failures per Day by Station", 
+       x = "Station", 
+       y = "Number of Failures (AUSFAELLE_PER_DAY)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 
 #### Function to Detect if observation is DEPARTURE; ARRIVAL ; TRANSIT
