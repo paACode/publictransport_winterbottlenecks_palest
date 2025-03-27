@@ -67,9 +67,9 @@ lm.temperature_updated <- lm(ANKUNFTDELAY_sec ~ ANKUNFTSZEIT_HOUR + w_temp_avg_c
 
 summary(lm.temperature_updated)
 
-"The average delay is 47.9 sec if all the predictos are 0. 
-With every hour increase the delay reduces by -0.30 sec on average. The p-value is significiant below 0.05. Therefore, we have strong evidence Ankunftszeit_HOUR is statistically significant.
-With every increase in average temperature, the delay reduces by 0.95 sec on average. The p-value is significant below 0.05. Therefore, we have strong evidence that average temperature is statistically significant.
-R^2 shows that the two predictors almost dont explain the delay variance. There are much stronger factors affecting delay that are missing from the model"
+"At midnight (00:00) and 0°C, the expected delay is 47.91 sec. For each additional hour later in the day, 
+the delay decreases by 0.30 sec on average. Additionally, for each 1°C increase in temperature, the delay decreases by 0.95 sec. 
+Both predictors are statistically significant (p < 0.05), but the model explains less than 0.1% of the variance, meaning other factors 
+have a much stronger impact on delay."
 
 "Stopped at SW01 page 10"
