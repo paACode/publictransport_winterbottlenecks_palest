@@ -1,0 +1,67 @@
+---
+title: "dataset_modification"
+output: html_document
+---
+
+# Load CSV from the current working directory
+
+raw_data \<- read.csv("your_file.csv", header = TRUE, stringsAsFactors = FALSE)
+
+``` {r Load CSV}
+# Load CSV from the current working directory
+raw_imported_data <- read.csv("zentrahlbahn_nov_dataset.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+``` {r modify data}
+library(dplyr)
+library(lubridate)
+
+data_processed <- raw_imported_data %>%
+  mutate(
+    BETRIEBSTAG = as.Date(BETRIEBSTAG, format = "%d.%m.%Y"),
+    BETREIBER_ABK = as.factor(BETREIBER_ABK),
+    BETREIBER_NAME = as.factor(BETREIBER_NAME),
+    PRODUKT_ID = as.factor(PRODUKT_ID),
+    LINIEN_TEXT = as.factor(LINIEN_TEXT),
+    VERKEHRSMITTEL_TEXT = as.factor(VERKEHRSMITTEL_TEXT),
+    HALTESTELLEN_NAME = as.factor(HALTESTELLEN_NAME),
+    # Convert empty strings to NA for time columns BEFORE conversion:
+    ANKUNFTSZEIT = na_if(ANKUNFTSZEIT, ""),
+    AN_PROGNOSE   = na_if(AN_PROGNOSE, ""),
+    ABFAHRTSZEIT  = na_if(ABFAHRTSZEIT, ""),
+    AB_PROGNOSE   = na_if(AB_PROGNOSE, ""),
+    # Now convert to POSIXct
+    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT, format = "%d.%m.%Y %H:%M"),
+    AN_PROGNOSE   = as.POSIXct(AN_PROGNOSE, format = "%d.%m.%Y %H:%M:%S"),
+    ABFAHRTSZEIT = as.POSIXct(ABFAHRTSZEIT, format = "%d.%m.%Y %H:%M"),
+    AB_PROGNOSE   = as.POSIXct(AB_PROGNOSE, format = "%d.%m.%Y %H:%M:%S"),
+    # Calculate delays: SOLL minus IST
+    delay_sec = as.numeric(difftime(AN_PROGNOSE, ANKUNFTSZEIT, units = "secs")),
+    delay_min = round(delay_sec / 60, 1)
+  ) %>%
+  # Group by train ID (FAHRT_BEZEICHNER)
+  group_by(FAHRT_BEZEICHNER) %>%
+  mutate(
+    # For START, take the HALTESTELLEN_NAME where both ANKUNFTSZEIT and AN_PROGNOSE are missing
+    START = first(as.character(HALTESTELLEN_NAME)[is.na(ANKUNFTSZEIT) & is.na(AN_PROGNOSE)]),
+    # For ZIEL, take the HALTESTELLEN_NAME where both ABFAHRTSZEIT and AB_PROGNOSE are missing
+    ZIEL  = first(as.character(HALTESTELLEN_NAME)[is.na(ABFAHRTSZEIT) & is.na(AB_PROGNOSE)])
+  ) %>%
+  ungroup()
+
+
+
+avg_delay_summary_full <- data_processed %>%
+  group_by(FAHRT_BEZEICHNER) %>%
+  summarise(
+    # For all other columns, take the first value in the group
+    across(-c(delay_sec, delay_min), first),
+    avg_delay_sec = mean(delay_sec, na.rm = TRUE),
+    avg_delay_min = round(mean(delay_sec, na.rm = TRUE) / 60, 1)
+  ) %>%
+  ungroup()
+
+
+
+```

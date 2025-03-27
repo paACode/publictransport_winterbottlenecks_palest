@@ -118,19 +118,198 @@ factor_levels <- sapply(data.dtypes, function(x) if(is.factor(x)) levels(x) else
 factor_levels
 
 ```
-
+In oder to improve readablity, it was decided to add delays in minutes, beside in seconds. Further, the regarding columns are enhanved by units which do not effect the value type while supporting readability.
 ```{r  Add Delay and create dataset}
-data.delay <- data.dtypes  %>% 
-  mutate(ABFAHRTDELAY = difftime(AB_PROGNOSE, ABFAHRTSZEIT)) %>% 
-  mutate(ANKUNFTDELAY = difftime(AN_PROGNOSE, ANKUNFTSZEIT))
+data.delay <- data.dtypes %>% 
+  mutate(ABFAHRTDELAY_sec = difftime(AB_PROGNOSE, ABFAHRTSZEIT, units = "secs"),
+         ABFAHRTDELAY_min = difftime(AB_PROGNOSE, ABFAHRTSZEIT, units = "mins"),
+         ANKUNFTDELAY_sec = difftime(AN_PROGNOSE, ANKUNFTSZEIT, units = "secs"),
+         ANKUNFTDELAY_min = difftime(AN_PROGNOSE, ANKUNFTSZEIT, units = "mins"))
 
-write.csv(data.delay, "zentrahlbahn_nov_dataset_delay.csv", row.names = FALSE)
+#write.csv(data.delay, "zentrahlbahn_nov_dataset_delay.csv", row.names = FALSE)
+head(data.delay)
+```
+
+In an additional step, trains are aggregated by Fart_Bezeichner variable and therefore departure and arrival destination locations are extracted and added.
+```{r Add Train Start / Stop Locations}
+
+data.processed <- data.delay %>% 
+  # Group by train ID (FAHRT_BEZEICHNER)
+  group_by(FAHRT_BEZEICHNER) %>%
+  mutate(
+    # For START, take the HALTESTELLEN_NAME where both ANKUNFTSZEIT and AN_PROGNOSE are missing
+    START = first(as.character(HALTESTELLEN_NAME)[is.na(ANKUNFTSZEIT) & is.na(AN_PROGNOSE)]),
+    # For ZIEL, take the HALTESTELLEN_NAME where both ABFAHRTSZEIT and AB_PROGNOSE are missing
+    ZIEL  = first(as.character(HALTESTELLEN_NAME)[is.na(ABFAHRTSZEIT)])
+  ) %>%
+  ungroup()
+  
 
 ```
 
 
+Also delay categories are created, clustering delays in on time, minor, moderate and significant delays.
+```{r delay categories}
+# Define the delay categories
+data.processed <- data.processed %>%
+  mutate(Delay_Category = case_when(
+    ANKUNFTDELAY_min < 3 ~ "On Time",
+    ANKUNFTDELAY_min >= 3 & ANKUNFTDELAY_min < 6 ~ "Minor Delay",
+    ANKUNFTDELAY_min >= 6 & ANKUNFTDELAY_min < 11 ~ "Moderate Delay",
+    ANKUNFTDELAY_min >= 11 ~ "Significant Delay",
+    ANKUNFTDELAY_min < 0 ~ "Early Arrival",  # Optional: For early arrivals
+    TRUE ~ "Unknown"  # Fallback for unexpected values
+  ))
+```
+
+
+```{r add day times}
+str(data.processed)
+
+data.processed <- data.processed %>%
+  mutate(
+    TAGESZEIT = { ## Calculate Tageszeiten 
+      stunde <- as.numeric(format(as.POSIXct(ANKUNFTSZEIT, format = "%Y-%m-%d %H:%M:%S"), "%H"))
+      case_when(
+        stunde >= 6  & stunde <= 10 ~ "Vormittag",
+        stunde >= 11 & stunde <= 13 ~ "Mittag",
+        stunde >= 14 & stunde <= 16 ~ "Nachmittag",
+        stunde >= 17 & stunde <= 19 ~ "Abend",
+        (stunde >= 20 & stunde <= 23) | (stunde >= 0 & stunde <= 5) ~ "Nacht",
+        TRUE ~ NA_character_
+      )
+    },
+    RUSH_HOUR = {
+      stunde <- as.numeric(format(as.POSIXct(ANKUNFTSZEIT, format = "%Y-%m-%d %H:%M:%S"), "%H"))
+      case_when(
+        is.na(stunde) ~ NA_character_,  # If no valid hour, return NA
+        stunde >= 6 & stunde <= 8  ~ "rush_hour_vormittag",
+        stunde >= 17 & stunde <= 18 ~ "rush_hour_abend",
+        TRUE ~ "rush_hour_none"
+      )
+    }
+  )
+
+```
+
+Import and modify weather data
+```{r weather data}
+library(dplyr)
+library(readr)
+library(lubridate)
+library(tidyr)
+
+# --- Define metadata and file paths for weather stations ---
+stations <- list(
+  ENG = list(
+    name = "Engelberg", elevation = 1036,
+    lat = 46.821639, lon = 8.410514,
+    region = "Central Alpine north slope", canton = "OW",
+    file = "d.weather/Engelberg_weather_data.csv"
+  ),
+  LUZ = list(
+    name = "Luzern", elevation = 454,
+    lat = 47.036439, lon = 8.301022,
+    region = "Central plateau", canton = "LU",
+    file = "d.weather/Luzern_weather_data.csv"
+  ),
+  MER = list(
+    name = "Meiringen", elevation = 589,
+    lat = 46.732222, lon = 8.169247,
+    region = "Western Alpine north slope", canton = "BE",
+    file = "d.weather/Meiringen_weather_data.csv"
+  )
+)
+
+# --- Function to load, filter, and annotate weather data for each station ---
+process_station <- function(station) {
+  df <- read_delim(station$file, delim = ";", show_col_types = FALSE)
+  
+  # Check that a "date" column exists
+  if (!"date" %in% names(df)) {
+    stop(paste("No 'date' column found in file:", station$file))
+  }
+  
+  df <- df %>%
+    mutate(date = ymd(date)) %>%  # Convert the date column to Date type
+    filter(date >= as.Date("2024-11-01") & date <= as.Date("2024-11-30")) %>%  # Filter for November 2024
+    mutate(
+      station_name = station$name  # add station name for later pivoting
+      # (Other metadata are added below manually after pivoting)
+    )
+  
+  return(df)
+}
+
+# --- Process all stations and combine into one dataframe ---
+weather_all <- bind_rows(lapply(stations, process_station))
+
+# --- Rename weather measurement variables ---
+# Adjust these names if your CSV files have different column names.
+all_data <- weather_all %>%
+  rename(
+    # station_code is renamed only if the CSV provides such a column.
+    station_code        = `station/location`,   
+    date                = date,
+    solar_radiation_wm2 = gre000d0,
+    snow_depth_cm       = hto000d0,
+    cloud_cover_pct     = nto000d0,
+    pressure_hpa        = prestad0,
+    precip_mm           = rre150d0,
+    sunshine_min        = sre000d0,
+    temp_avg_c          = tre200d0,
+    temp_min_c          = tre200dn,
+    temp_max_c          = tre200dx,
+    humidity_pct        = ure200d0
+  )
+
+# --- Pivot the weather data to wide format with suffix '_w' ---
+# This creates, for each date, separate columns per station for each weather variable.
+weather_wide <- all_data %>%
+  pivot_wider(
+    id_cols = date,
+    names_from = station_name,
+    values_from = c(solar_radiation_wm2, snow_depth_cm, cloud_cover_pct, pressure_hpa, 
+                    precip_mm, sunshine_min, temp_avg_c, temp_min_c, temp_max_c, humidity_pct),
+    names_glue = "w_{.value}_{station_name}"
+  )
+
+# --- Add station metadata for each station ---
+# Since the metadata is constant per station, add them as new columns to the wide weather data.
+weather_wide <- weather_wide %>%
+  mutate(
+    # For Engelberg
+    w_elevation_Engelberg = stations$ENG$elevation,
+    w_lat_Engelberg       = stations$ENG$lat,
+    w_lon_Engelberg       = stations$ENG$lon,
+    w_region_Engelberg    = stations$ENG$region,
+    w_canton_Engelberg    = stations$ENG$canton,
+    # For Luzern
+    w_elevation_Luzern    = stations$LUZ$elevation,
+    w_lat_Luzern          = stations$LUZ$lat,
+    w_lon_Luzern          = stations$LUZ$lon,
+    w_region_Luzern       = stations$LUZ$region,
+    w_canton_Luzern       = stations$LUZ$canton,
+    # For Meiringen
+    w_elevation_Meiringen = stations$MER$elevation,
+    w_lat_Meiringen       = stations$MER$lat,
+    w_lon_Meiringen       = stations$MER$lon,
+    w_region_Meiringen    = stations$MER$region,
+    w_canton_Meiringen    = stations$MER$canton
+  )
+
+# --- Merge the weather data with the main dataset ---
+# data.processed is assumed to be your train stops tibble with a date column called BETRIEBSTAG.
+data.main <- data.processed %>%
+  left_join(weather_wide, by = c("BETRIEBSTAG" = "date"))
+
+# --- View the merged data ---
+print(data.main)
 
 
 
+```
 
-
+```{r write final file}
+  write.csv(data.main, "zentrahlbahn_final.csv", row.names = FALSE)
+```
