@@ -108,10 +108,12 @@ fealltaus_net <- nnet(FAELLT_AUS_TF ~ . , data = train, size=16, maxit=10000, ra
 ```
 
 ```{r}
-plot(faelltaus_net)
+plot(fealltaus_net)
 ```
 ```{r}
-pred <- predict(faelltaus_net, test, type="class")
+pred <- predict(fealltaus_net, test, type="class")
 cm_nn <- table(pred=pred, true=test$FAELLT_AUS_TF)
 cm_nn
+
+confusionMatrix(as.factor(pred), as.factor(test$FAELLT_AUS_TF))
 ```
