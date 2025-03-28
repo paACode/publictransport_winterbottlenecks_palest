@@ -86,3 +86,26 @@ In the night the delay is 22.28 sec less than in the evening
 In the morning the delay is 3.98 sec les than in the evening
 With every unit increas in temperature, the delay reduces by 0.975 sec.
 All predictors are statistically siginificant. However the R^2 tell us with 0.012 that other factors have a much stronger impact on delay"
+
+
+# Regression model with interaction
+
+lm.temperature_tageszeit_interaction <- lm(ANKUNFTDELAY_sec ~ TAGESZEIT * w_temp_avg_c_Luzern , data = zb_final)
+
+summary(lm.temperature_tageszeit_interaction)
+
+
+
+#--------------------------------------------------
+#GAM
+
+#Some plots
+
+str(zb_final)
+
+library(ggplot2)
+
+gg.delay_temp <- ggplot (data=zb_final, mapping = aes(y= ANKUNFTDELAY_sec, x=w_temp_avg_c_Luzern)) + geom_point()
+
+gg.delay_temp + geom_smooth()
+
