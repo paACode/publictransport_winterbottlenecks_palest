@@ -117,6 +117,13 @@ gg.delay_precip <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_sec)
 
 gg.delay_precip + geom_smooth()
 
+#model with several parameters
+lm.delay_hour_temp_precip <- lm(ANKUNFTDELAY_sec ~ STUNDE_ANKUNFT + w_temp_avg_c_Luzern + w_precip_mm_Luzern, data = zb_final)
+ 
+lm.delay_hour_temp_precip_quadratic <- update(lm.delay_hour_temp_precip, .~. + I(w_precip_mm_Luzern^2)+ I(w_temp_avg_c_Luzern^2)+ I(STUNDE_ANKUNFT^2))
+"I have added here 3 quadratic terms. The model fitts better however it is more complex, danger of overfitting. Maybe a model with just one quadratic term should be considered"
 
+anova(lm.delay_hour_temp_precip, lm.delay_hour_temp_precip_quadratic)
 
+"Stopped at page 5 but need to read collinearity isues at page 18 "
 
