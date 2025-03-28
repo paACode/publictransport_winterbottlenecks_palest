@@ -73,3 +73,16 @@ Both predictors are statistically significant (p < 0.05), but the model explains
 have a much stronger impact on delay."
 
 "Stopped at SW01 page 10"
+
+
+lm.temperature_taageszeit <- lm(ANKUNFTDELAY_sec ~ TAGESZEIT + w_temp_avg_c_Luzern , data = zb_final)
+
+summary(lm.temperature_taageszeit)
+
+"The delay in the evening with a temperature of 0C is 57.96 sec.
+At lunch time the delay is 27.3 sec less than in the evening.
+In the afternoon the delay is 19.29 less than in the evening
+In the night the delay is 22.28 sec less than in the evening
+In the morning the delay is 3.98 sec les than in the evening
+With every unit increas in temperature, the delay reduces by 0.975 sec.
+All predictors are statistically siginificant. However the R^2 tell us with 0.012 that other factors have a much stronger impact on delay"
