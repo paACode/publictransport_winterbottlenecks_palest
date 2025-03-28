@@ -105,7 +105,18 @@ str(zb_final)
 
 library(ggplot2)
 
-gg.delay_temp <- ggplot (data=zb_final, mapping = aes(y= ANKUNFTDELAY_sec, x=w_temp_avg_c_Luzern)) + geom_point()
+gg.delay_hour <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_sec), x=STUNDE_ANKUNFT)) + geom_point()
+
+gg.delay_hour + geom_smooth()
+
+gg.delay_temp <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_sec), x=w_temp_avg_c_Luzern )) + geom_point()
 
 gg.delay_temp + geom_smooth()
+
+gg.delay_precip <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_sec), x=w_precip_mm_Luzern )) + geom_point()
+
+gg.delay_precip + geom_smooth()
+
+
+
 
