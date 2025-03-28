@@ -67,41 +67,36 @@ d.zentralbahn %>%
 Split the data into 80% to train and 20% to test.
 
 ```{r}
-d.zentralbahn.dt <- d.zentralbahn %>%
-  mutate(
-    BETRIEBSTAG= as.Date(BETRIEBSTAG, format = "%d.%m.%Y"),
-    FAHRT_BEZEICHNER = FAHRT_BEZEICHNER, # ???
-    BETREIBER_ID = BETREIBER_ID, # ???
-    LINIEN_ID = LINIEN_ID, # ???
-    LINIEN_TEXT = as.factor(LINIEN_TEXT), # S26, IR16 etc
-    UMLAUF_ID = UMLAUF_ID, # ???
-    VERKEHRSMITTEL_TEXT = as.factor(VERKEHRSMITTEL_TEXT),
-    ZUSATZFAHRT_TF = as.logical(ZUSATZFAHRT_TF), 
-    FAELLT_AUS_TF = as.logical(FAELLT_AUS_TF),
-    BPUIC = BPUIC, # ???
-    HALTESTELLEN_NAME = as.factor(HALTESTELLEN_NAME),
-    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT, format = "%d.%m.%Y %H:%M" ),
-    AN_PROGNOSE = as.POSIXct(AN_PROGNOSE, format = "%d.%m.%Y %H:%M:%S"),
-    AN_PROGNOSE_STATUS = as.factor(AN_PROGNOSE_STATUS),
-    ABFAHRTSZEIT = as.POSIXct(ABFAHRTSZEIT, format = "%d.%m.%Y %H:%M" ),
-    AB_PROGNOSE = as.POSIXct(AN_PROGNOSE,  format = "%d.%m.%Y %H:%M:%S"),
-    AB_PROGNOSE_STATUS = as.factor(AB_PROGNOSE_STATUS), 
-    DURCHFAHRT_TF = as.logical(DURCHFAHRT_TF)
-    
-  )
+d.zentralbahn_for_ann <- d.zentralbahn %>%
+  select(FAELLT_AUS_TF, LINIEN_TEXT) # Want to predict Faellt aus based on Linien ID
+
+#Needs to be factor for ann to work
+d.zentralbahn_for_ann$FAELLT_AUS_TF <-  as.factor(d.zentralbahn_for_ann$FAELLT_AUS_TF)
+
+#Create Dummy Variables for training
+dummies <- dummyVars(~LINIEN_TEXT, data = d.zentralbahn_for_ann)
+data_dummies <- predict(dummies, newdata = d.zentralbahn_for_ann)
+
+#Remove original Linien ID and add data_dummies
+d.zentralbahn_for_ann <- d.zentralbahn_for_ann %>% 
+  select(-LINIEN_TEXT) 
+  
+# add data_dummies for Linien _TEXT
+d.zentralbahn_for_ann <- bind_cols(d.zentralbahn_for_ann, data_dummies)
+  
+  
+
+
 ```
-
-
-
 
 ```{r}
 set.seed(123)
-is_train <- runif(nrow(d.zentralbahn.dt)) < 0.8
+is_train <- runif(nrow(d.zentralbahn_for_ann)) < 0.8
 mean(is_train)
 ```
 ```{r}
-train <- d.zentralbahn.dt[is_train, ]
-test <- d.zentralbahn.dt[!is_train, ]
+train <- d.zentralbahn_for_ann[is_train, ]
+test <- d.zentralbahn_for_ann[!is_train, ]
 ```
 
 
@@ -109,12 +104,14 @@ test <- d.zentralbahn.dt[!is_train, ]
 
 ```{r}
 set.seed(412)
-credit_net <- nnet(FAELLT_AUS_TF ~ . , data = train, size=16, maxit=10000, range=0.1, decay=5e-4, MaxNWts = 2000)
+fealltaus_net <- nnet(FAELLT_AUS_TF ~ . , data = train, size=16, maxit=10000, range=0.1, decay=5e-4, MaxNWts = 2000)
 ```
 
 ```{r}
-plot(credit_net)
+plot(faelltaus_net)
 ```
 ```{r}
-credit_net
+pred <- predict(faelltaus_net, test, type="class")
+cm_nn <- table(pred=pred, true=test$FAELLT_AUS_TF)
+cm_nn
 ```
