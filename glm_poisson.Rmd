@@ -46,6 +46,7 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(forcats) 
+library(lubridate)
 
 #### Read in Data ####----------------------------------------------------------
 d.zentrahlbahn<- read.csv("zentrahlbahn_final.csv") %>% 
@@ -89,7 +90,7 @@ ggplot(d.zentrahlbahn, aes(x =  fct_reorder(HALTESTELLEN_NAME,
 
 This are the Lines R70 and R71. So one easy predictor for AUSFAELLE is if the observation is on the blocked line or not.
 
-```{r Relation between Train Stop and Cancellations per Day, include=TRUE}
+```{r Relation between Train Line and Cancellations per Day, include=TRUE}
 
 ### Make a Boxplot to see relation between Haltestelle AUSFEALLE PER DAY
 
@@ -113,6 +114,192 @@ ggplot(d.zentrahlbahn, aes(x =  fct_reorder(LINIEN_TEXT,
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
+
+The problem about the plost above is that the AUSFEALLE per Day are in most cases the same for all 30 days. So there is not really a distribution in the Ausfälle counts
+
+
+A much better idea to make a GLM with poisson would be to count how many trains are "delayed" per hour during the day. The counts would be for each trainstation
+
+
+What we see in the following plot are all the observations that were on time. Each point is a day in November ( total 30 per operating hour)
+
+```{r on time trains, include=TRUE}
+
+### First of all we add a categorical variable for every hour per day --> in total 24 categories
+
+d.zentrahlbahn <-  d.zentrahlbahn %>% 
+  mutate(
+    hour = hour(as.POSIXct(ANKUNFTSZEIT, format="%Y-%m-%d %H:%M:%S")), 
+    operating_hour = factor(
+      paste0(hour, ":00 - ", hour + 1, ":00"),
+      levels = paste0(0:23, ":00 - ", 1:24, ":00")
+    )
+  )
+
+
+#Now we count all the oservations that were on time  for each operation hour --> 30 observations per day
+d.zentrahlbahn_summary <- d.zentrahlbahn %>%
+  group_by(operating_hour, BETRIEBSTAG) %>%
+  summarize(Count_ON_TIME = sum(Delay_Category == "On Time"), .groups = "drop") %>% 
+  ungroup()
+
+
+ggplot(d.zentrahlbahn_summary, aes(x =  operating_hour, 
+                           y = Count_ON_TIME)) +
+  geom_boxplot() +
+   geom_jitter(width = 0.2, height = 0.1, color = "blue", alpha = 0.2)+
+  labs(title = "On Time Trains Count", 
+       x = "Operating Hour", 
+       y = "Nr of Observations that were on Time") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+
+More valuable insight would be to know the perecentage of trains that were on time. Therefore we divide for each hour by the number of oservations that are available. But this does not work, because poisson need count data.
+
+
+```{r On time trains  nr of trains hh, include=TRUE}
+
+
+
+#Now we count all the oservations that were on time  for each operation hour --> 30 observations per day
+d.zentrahlbahn_summary <- d.zentrahlbahn %>%
+  group_by(operating_hour, BETRIEBSTAG) %>%
+  summarize(
+    Count_ON_TIME = sum(Delay_Category == "On Time"),
+    Total_Trains = n(),  # Total number of trains in this hour
+    .groups = "drop"
+  ) %>%
+  mutate(Proportion_On_Time = Count_ON_TIME / Total_Trains)
+
+
+ggplot(d.zentrahlbahn_summary, aes(x =  operating_hour, 
+                           y = Proportion_On_Time)) +
+  geom_boxplot() +
+   geom_jitter(width = 0.2, height = 0.1, color = "blue", alpha = 0.2)+
+  labs(title = "On Time Trains Count", 
+       x = "Operating Hour", 
+       y = "Nr of Observations that were on Time") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+Lets now have a look at the plot of delays Trains.
+
+
+
+```{r delayed trains, include=TRUE}
+
+
+#Now we count all the oservations that were on time  for each operation hour --> 30 observations per day
+d.zentrahlbahn_summary <- d.zentrahlbahn %>%
+  filter(!is.na(operating_hour)) %>%  # Removes NA observations --> This are the Abfahrtszüge
+  group_by(operating_hour, BETRIEBSTAG) %>%
+  summarize(Count_Delayed = sum(Delay_Category != "On Time"), .groups = "drop") %>% 
+  ungroup()
+
+
+ggplot(d.zentrahlbahn_summary, aes(x =  operating_hour, 
+                           y = Count_Delayed)) +
+  geom_boxplot() +
+   geom_jitter(width = 0.2, height = 0.1, color = "blue", alpha = 0.2)+
+  labs(title = "Delayed Trains Count", 
+       x = "Operating Hour", 
+       y = "Nr of Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+An interesting model could be to classify the rush hours (in red)
+
+Then we would habe 3  classes "Ruhs Hour", "No Operation" (von 4am to 5am), "Low Operation" (0am to 2am)
+and "Mid Operation) everything in between.
+
+Her ei could do some T-Test Analysis to see which Hours significantly differ
+
+
+
+
+![Rush Hour Image](Rush_Hours.png)
+
+Lets create the rush hour categories and we see that this will give a great GLM poisson model.  But we also should see this in proportion
+
+```{r Rush Hour Category, include=TRUE}
+
+
+d.zentrahlbahn <- d.zentrahlbahn %>%
+  mutate(
+    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT, format="%Y-%m-%d %H:%M:%S"),
+    rush_hour_category = case_when(
+      hour(ANKUNFTSZEIT) >= 0 & hour(ANKUNFTSZEIT) < 2 ~ "Low Operation",   # 0am to 2am
+      hour(ANKUNFTSZEIT) >= 4 & hour(ANKUNFTSZEIT) < 5 ~ "No Operation",    # 4am to 5am
+      (hour(ANKUNFTSZEIT) >= 6 & hour(ANKUNFTSZEIT) < 9) |  # 6am to 9am
+        (hour(ANKUNFTSZEIT) >= 11 & hour(ANKUNFTSZEIT) < 14) | # 11am to 2pm
+        (hour(ANKUNFTSZEIT) >= 16 & hour(ANKUNFTSZEIT) < 20) ~ "Rush Hour", # 4pm to 8pm
+      TRUE ~ "Normal Operation"   # Everything else
+    )
+  )
+
+d.zentrahlbahn_summary <- d.zentrahlbahn %>%
+  filter(!is.na(operating_hour)) %>%  # Removes NA observations --> This are the Abfahrtszüge
+  group_by(rush_hour_category, BETRIEBSTAG) %>%
+  summarize(Count_Delayed = sum(Delay_Category != "On Time"), .groups = "drop") %>% 
+  ungroup()
+
+
+ggplot(d.zentrahlbahn_summary, aes(x =  rush_hour_category, 
+                           y = Count_Delayed)) +
+  geom_boxplot() +
+   geom_jitter(width = 0.2, height = 0.01, color = "blue", alpha = 0.2)+
+  labs(title = "Delayed Trains Count", 
+       x = "Operating Hour", 
+       y = "Nr of Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+Just for interest we set it again into proportion. It is strange that there are negatuve Observations. The reason for that is that we jitter also in Y-Axis 
+
+```{r Rush Hour Category¨in Proportion, include=TRUE}
+
+d.zentrahlbahn_summary <- d.zentrahlbahn %>%
+  filter(!is.na(operating_hour)) %>%  # Remove NA observations
+  group_by(rush_hour_category, BETRIEBSTAG) %>%
+  summarize(
+    Count_Delayed = sum(Delay_Category != "On Time"),  # Count of delayed trains
+    Total_Observations = n(),  # Total observations per group
+    .groups = "drop"
+  ) %>%
+  ungroup() %>%
+  mutate(
+    Proportion_Delayed = Count_Delayed / Total_Observations  # Calculate proportion of delayed trains
+  )
+
+# Plot the proportion of delayed trains
+ggplot(d.zentrahlbahn_summary, aes(x = rush_hour_category, 
+                                   y = Proportion_Delayed)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, height = 0.01, color = "blue", alpha = 0.2) +
+  labs(title = "Proportion of Delayed Trains", 
+       x = "Rush Hour Category", 
+       y = "Proportion of Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Conlcusion of today: 
+
+- We can make a Model which depends on operating hours ... we can detect which working hours do have a significant effect and add them
+to our model
+
+- We can make an easier Model Based on the Operation Class
+
 
 
 ```{r Chunk Example 3 : My code and result is included in the Document, include=TRUE, echo=TRUE}
