@@ -97,7 +97,10 @@ summary(lm.temperature_tageszeit_interaction)
 #--------------------------------------------------
 #GAM
 
+
 #creating a subset
+"I would to analyse the data in function of delay with weather data among others. The ZB line goes throw different climate region. There I want to analyse just the ZB line which is in the region of Lucerne. "
+
 library(dplyr)
 
 # Define the specific Haltestellen
@@ -112,30 +115,44 @@ summary(zb_final_subset$HALTESTELLEN_NAME)
 
 View(zb_final_subset)
 
+str(zb_final_subset)
 
 #Some plots
 
-str(zb_final)
 
 library(ggplot2)
 
-gg.delay_hour <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_min), x=STUNDE_ANKUNFT)) + geom_point()
+gg.delay_hour <- ggplot (data=zb_final_subset, mapping = aes(y= log(ANKUNFTDELAY_min), x=STUNDE_ANKUNFT)) + geom_point()
 
 gg.delay_hour + geom_smooth()
 
-gg.delay_temp <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_min), x=w_temp_avg_c_Luzern )) + geom_point()
+gg.delay_temp <- ggplot (data=zb_final_subset, mapping = aes(y= log(ANKUNFTDELAY_min), x=w_temp_avg_c_Luzern )) + geom_point()
 
 gg.delay_temp + geom_smooth()
 
-gg.delay_precip <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_min), x=w_precip_mm_Luzern )) + geom_point()
+gg.delay_precip <- ggplot (data=zb_final_subset, mapping = aes(y= log(ANKUNFTDELAY_min), x=w_precip_mm_Luzern )) + geom_point()
 
 gg.delay_precip + geom_smooth()
+
 "Without log the regression line was almost flat. With log it became more curved. This suggests an increase exponentially rather than linearly with precipitation."
 
 
+#Model with several parameter measuring collinearity
+library(car)
+lm.delay_hour_several_parameter_1 <- lm(ANKUNFTDELAY_min ~ STUNDE_ANKUNFT + w_temp_avg_c_Luzern + w_precip_mm_Luzern + RUSH_HOUR + TAGESZEIT, data = zb_final_subset)
+
+summary(lm.delay_hour_several_parameter_1)
+
+vif(lm.delay_hour_several_parameter_1)
+
+"
+I will not go into details about the summeray here. The purpose was to see if STUNDE_ANKUNFT is collinear with TAGESZEIT and RUSHOUR, which would make sense because the base of TAGESZEIT and RUSHOUR is STUNDE_ANKUNFT 
+In the summary we can see the only predictors which is not statistically significant is STUNDe_ANKUNFT. All other predictos are statistically siginificant. 
+VIF shows us that RUSH_HOUR has a GVIF of 6.18 and TAGESZEIT 7.26. This confirms that I should not use those predictors and remove them from my model.
+"
 
 #model with several parameters
-lm.delay_hour_temp_precip <- lm(ANKUNFTDELAY_min ~ STUNDE_ANKUNFT + w_temp_avg_c_Luzern + w_precip_mm_Luzern, data = zb_final)
+lm.delay_hour_temp_precip <- lm(ANKUNFTDELAY_min ~ STUNDE_ANKUNFT + w_temp_avg_c_Luzern + w_precip_mm_Luzern, data = zb_final_subset)
  
 lm.delay_hour_temp_precip_quadratic <- update(lm.delay_hour_temp_precip, .~. + I(w_precip_mm_Luzern^2)+ I(w_temp_avg_c_Luzern^2)+ I(STUNDE_ANKUNFT^2))
 "I have added here 3 quadratic terms. The model fitts better however it is more complex, danger of overfitting. Maybe a model with just one quadratic term should be considered"
@@ -145,8 +162,4 @@ anova(lm.delay_hour_temp_precip, lm.delay_hour_temp_precip_quadratic)
 "Stopped at page 5 but need to read collinearity isues at page 18 "
 
 
-"---> Todo with a model with categorical variables or interactions"
-#Measuring collinearity
-
-library(car)
 
