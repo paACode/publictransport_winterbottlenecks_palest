@@ -97,6 +97,22 @@ summary(lm.temperature_tageszeit_interaction)
 #--------------------------------------------------
 #GAM
 
+#creating a subset
+library(dplyr)
+
+# Define the specific Haltestellen
+haltestellen_to_keep <- c("Luzern", "Luzern Allmend/Messe", "Kriens Mattenhof", "Horw", 
+                          "Hergiswil Matt", "Hergiswil NW", "Stansstad", "Stans")
+
+# Subset the data
+zb_final_subset <- zb_final %>%
+  filter(HALTESTELLEN_NAME %in% haltestellen_to_keep)
+
+summary(zb_final_subset$HALTESTELLEN_NAME)
+
+View(zb_final_subset)
+
+
 #Some plots
 
 str(zb_final)
