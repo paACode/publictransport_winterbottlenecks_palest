@@ -36,7 +36,7 @@ legend("topleft", pch = 19, legend = names(color_map), col = color_map)
 library(ggplot2)
 
 qplot(y = w_temp_avg_c_Luzern, 
-      x = ABFAHRTDELAY_sec, 
+      x = ANKUNFTDELAY_min, 
       facets = ~ TAGESZEIT, 
       data = zb_final)
 
@@ -72,8 +72,6 @@ the delay decreases by 0.30 sec on average. Additionally, for each 1°C increase
 Both predictors are statistically significant (p < 0.05), but the model explains less than 0.1% of the variance, meaning other factors 
 have a much stronger impact on delay."
 
-"Stopped at SW01 page 10"
-
 
 lm.temperature_taageszeit <- lm(ANKUNFTDELAY_sec ~ TAGESZEIT + w_temp_avg_c_Luzern , data = zb_final)
 
@@ -105,20 +103,23 @@ str(zb_final)
 
 library(ggplot2)
 
-gg.delay_hour <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_sec), x=STUNDE_ANKUNFT)) + geom_point()
+gg.delay_hour <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_min), x=STUNDE_ANKUNFT)) + geom_point()
 
 gg.delay_hour + geom_smooth()
 
-gg.delay_temp <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_sec), x=w_temp_avg_c_Luzern )) + geom_point()
+gg.delay_temp <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_min), x=w_temp_avg_c_Luzern )) + geom_point()
 
 gg.delay_temp + geom_smooth()
 
-gg.delay_precip <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_sec), x=w_precip_mm_Luzern )) + geom_point()
+gg.delay_precip <- ggplot (data=zb_final, mapping = aes(y= log(ANKUNFTDELAY_min), x=w_precip_mm_Luzern )) + geom_point()
 
 gg.delay_precip + geom_smooth()
+"Without log the regression line was almost flat. With log it became more curved. This suggests an increase exponentially rather than linearly with precipitation."
+
+
 
 #model with several parameters
-lm.delay_hour_temp_precip <- lm(ANKUNFTDELAY_sec ~ STUNDE_ANKUNFT + w_temp_avg_c_Luzern + w_precip_mm_Luzern, data = zb_final)
+lm.delay_hour_temp_precip <- lm(ANKUNFTDELAY_min ~ STUNDE_ANKUNFT + w_temp_avg_c_Luzern + w_precip_mm_Luzern, data = zb_final)
  
 lm.delay_hour_temp_precip_quadratic <- update(lm.delay_hour_temp_precip, .~. + I(w_precip_mm_Luzern^2)+ I(w_temp_avg_c_Luzern^2)+ I(STUNDE_ANKUNFT^2))
 "I have added here 3 quadratic terms. The model fitts better however it is more complex, danger of overfitting. Maybe a model with just one quadratic term should be considered"
@@ -126,4 +127,10 @@ lm.delay_hour_temp_precip_quadratic <- update(lm.delay_hour_temp_precip, .~. + I
 anova(lm.delay_hour_temp_precip, lm.delay_hour_temp_precip_quadratic)
 
 "Stopped at page 5 but need to read collinearity isues at page 18 "
+
+
+"---> Todo with a model with categorical variables or interactions"
+#Measuring collinearity
+
+library(car)
 
