@@ -212,6 +212,30 @@ I used here the full dataset and not the subset because the model did not depend
 
 "p-value is close to 0. Therefore, we have strong evidence that the smooth terme is not equal to 0.
 The predictor ANKUNFTDELAY_min has an effect on ABFAHRTDELAY_min equal to polinominal degree 8. 
-The R^2 shows 80% meaning that the model represents well the reality (which is obvious because arrival delay has mostly an influence on depature delay).
+The R^2 shows 80% meaning that the model represents well the reality (which is obvious because arrival delay has mostly an influence on depature delay)."
+
+gam_temp_precip_haltestellen <- gam(ANKUNFTDELAY_min ~ HALTESTELLEN_NAME+ s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern), data = zb_final_subset) 
+
+summary(gam_temp_precip_haltestellen)
+
+"Besides the station Stans all the station seem to be statistically significant with p-value close to 0.
+The delay at the station Hergiswil Matt is on average 0.89 min. 
+The delay at the station Hergiswil NW is on average -0.1 min less than Hergiswil Matt.
+The delay at the station Kriens Mattenhof is on average -0.18 min less than Hergiswil Matt.
+The delay at the station Luzern is on average -0.6 min less than Hergiswil Matt.
+The delay at the station Luzern Allmend/Messe is on average -0.48 min less than Hergiswil Matt.
+The delay at the station Stans is not statistically significant. The p-value is 0. Therefore we have to assume that the regression line is flat.
+Interesting enough. The Station Stansstad is the only station which has a larger delay than Hergiswil Matt. The train is on average 0.33 min more delayed
+
+Concerning the smooth terms:
+The p-value of both smooth terms w_temp_avg_c_Luzern and w_precip_mm_Luzern are close to 0. Therefore, we have strong evidence that the smooth terms are not equal to 0.
+The edf of both smooth terms show that they have an effect on ANKUNFTDELAY_min equal to polinominal degree 9.
+
+R^2 shows that the model represents 9.5% of the reality. This is the highest gam - R^2 so fare. 
+"
+
+"Check answer
+Why Stans not siginificant?"
+
 
 
