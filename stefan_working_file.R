@@ -219,23 +219,37 @@ gam_temp_precip_haltestellen <- gam(ANKUNFTDELAY_min ~ HALTESTELLEN_NAME+ s(w_te
 summary(gam_temp_precip_haltestellen)
 
 "Besides the station Stans all the station seem to be statistically significant with p-value close to 0.
-The delay at the station Hergiswil Matt is on average 0.89 min. 
-The delay at the station Hergiswil NW is on average -0.1 min less than Hergiswil Matt.
-The delay at the station Kriens Mattenhof is on average -0.18 min less than Hergiswil Matt.
-The delay at the station Luzern is on average -0.6 min less than Hergiswil Matt.
-The delay at the station Luzern Allmend/Messe is on average -0.48 min less than Hergiswil Matt.
-The delay at the station Stans is not statistically significant. The p-value is 0. Therefore we have to assume that the regression line is flat.
-Interesting enough. The Station Stansstad is the only station which has a larger delay than Hergiswil Matt. The train is on average 0.33 min more delayed
+The delay at the station Hergiswil Matt is on average 0.89 min with temperature 0C and precipitation at 0mm.
+The delay at the station Hergiswil NW is on average -0.1 min less than Hergiswil Matt with temperature 0C and precipitation at 0mm.
+The delay at the station Kriens Mattenhof is on average -0.18 min less than Hergiswil Matt with temperature 0C and precipitation at 0mm.
+The delay at the station Luzern is on average -0.6 min less than Hergiswil Matt with temperature 0C and precipitation at 0mm.
+The delay at the station Luzern Allmend/Messe is on average -0.48 min less than Hergiswil Matt with temperature 0C and precipitation at 0mm.
+The delay at the station Stans is not statistically significant different to the delay in Hergiswil Matt.
+Interesting enough. The Station Stansstad is the only station which has a larger delay than Hergiswil Matt. The train is on average 0.33 min more delayed with temperature 0C and precipitation at 0mm.
 
 Concerning the smooth terms:
-The p-value of both smooth terms w_temp_avg_c_Luzern and w_precip_mm_Luzern are close to 0. Therefore, we have strong evidence that the smooth terms are not equal to 0.
-The edf of both smooth terms show that they have an effect on ANKUNFTDELAY_min equal to polinominal degree 9.
+The p-value of both smooth terms w_temp_avg_c_Luzern and w_precip_mm_Luzern are close to 0. Therefore, we have strong evidence that the smooth terms are not equal to 0 and have a significant non-linear effect on ANKUNFTDELAY_min.
+The edf of both smooth terms show that they have an effect on ANKUNFTDELAY_min equal and is recommended to use a polinominal degree 9.
 
-R^2 shows that the model represents 9.5% of the reality. This is the highest gam - R^2 so fare. 
+R^2 shows that the model represents 9.5% of the reality. This is the highest gam - R^2 so fare. Nevertheless, many varation are still unexplained and may be influenced by other factors.
 "
+plot(gam_temp_precip_haltestellen, residuals = TRUE, select = 1)
 
-"Check answer
-Why Stans not siginificant?"
+"The effect of temperature on train delays is statistically significant. However, the plot suggests the acutal impact is weak. As the the curve is rather flat, we can assume that temerature is not a strong predictor of ANKUNFTDELAY_min. "
+
+plot(gam_temp_precip_haltestellen, residuals = TRUE, select = 2)
+
+"!!!Plot interpretation here!!!"
+
+gam_temp_precip_rush_hour <- gam(ANKUNFTDELAY_min ~ RUSH_HOUR + s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern), data = zb_final_subset) 
+
+summary(gam_temp_precip_rush_hour)
+
+
+
+
+"Todo: Abfahrt Delay min // Linien Text //  Tageszeit. Noch einmal durchgehen View. Evtl habe ich dann noch eine andere Idee "
+
 
 
 
