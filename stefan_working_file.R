@@ -218,7 +218,9 @@ gam_temp_precip_haltestellen <- gam(ANKUNFTDELAY_min ~ HALTESTELLEN_NAME+ s(w_te
 
 summary(gam_temp_precip_haltestellen)
 
-"Besides the station Stans all the station seem to be statistically significant with p-value close to 0.
+"
+Interpretation parametric coefficients:
+Besides the station Stans all the station seem to be statistically significant with p-value close to 0.
 The delay at the station Hergiswil Matt is on average 0.89 min with temperature 0C and precipitation at 0mm.
 The delay at the station Hergiswil NW is on average -0.1 min less than Hergiswil Matt with temperature 0C and precipitation at 0mm.
 The delay at the station Kriens Mattenhof is on average -0.18 min less than Hergiswil Matt with temperature 0C and precipitation at 0mm.
@@ -245,10 +247,48 @@ gam_temp_precip_rush_hour <- gam(ANKUNFTDELAY_min ~ RUSH_HOUR + s(w_temp_avg_c_L
 
 summary(gam_temp_precip_rush_hour)
 
+"
+Interpretation parametric coefficients:
+Rush_hour_none and rush_hour_vormittag are statistically significant, meaning they have a p-value close to 0. We can assume that both predictor are not equal to the reference category rush_hour_abend. In other words: the 2 predictos differ statistically significant on average from rush_hour_abend.
+During evening rush hour (rush_hour_abend) the delay is on average 1.08 min with with temperature 0C and precipitation at 0mm.
+If there is no rush hour (rush_hour_none) the delay is 0.5 min than in the evening
+During the morning rush hour (rush_hour_vormittag) the delay is 0.28 min less than in the evening. 
+
+The smooth terms are the same as gam_temp_precip_haltestellen. For completeness, the information is provided again below:
+The p-value of both smooth terms w_temp_avg_c_Luzern and w_precip_mm_Luzern are close to 0. Therefore, we have strong evidence that the smooth terms are not equal to 0 and have a significant non-linear effect on ANKUNFTDELAY_min.
+The edf of both smooth terms show that they have an effect on ANKUNFTDELAY_min equal and is recommended to use a polinominal degree 9.
+
+
+R^2 shows that the model represents 7.9% of the reality which is less than with the gam_temp_precip_haltestellen model.
+
+The plots are very similar to those for gam_temp_precip_haltestellen; therefore, a separate explanation is not necessary.
+
+"
+
+gam_temp_precip_tageszeit <- gam(ABFAHRTDELAY_min ~ TAGESZEIT  + s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern), data = zb_final_subset) 
+
+summary(gam_temp_precip_tageszeit)
+
+"Interpretation parametric coefficients:
+Morning, lunch, afternoon, night predictos are statistically significant. All those predictors' p-value besides the morning predictor are close to 0. The morning's p-value is with 0.031 still significant.
+This means that all those predictors differ statistically significant on average from their regerence category which is evening.
+Lets have a more detailed look:
+In the evening the delay of ZB trains in the region of Lucerne is on average 0.75 min if the temperature is 0C and precipitation is 0mm.
+During lunch time the trains are on average 0.46 min less delayed than in the evening, assuming constant temperature and precipitation. 
+In the afternoon, the trains are on average 0.28 min less delayed than in the evening, assuming constant temperature and precipitation. 
+During the night, the trains are on average 0.37 min less delayed than in the evening, assuming constant temperature and precipitation.
+The train delay in the morning is 0.06 minutes less than in the evening, although this difference is smaller and statistically significant at p = 0.0306 (indicating it is still worth noting, but the effect is small compared to other times of day).
+
+
+The smooth terms and plots are the same as gam_temp_precip_haltestellen; therefore, a separate explanation is not necessary.
+
+R^2 shows that the model represents 7.6% of the reality which is less than gam_temp_precip_haltestellen and gam_temp_precip_rush_hour.
+"
 
 
 
-"Todo: Abfahrt Delay min // Linien Text //  Tageszeit. Noch einmal durchgehen View. Evtl habe ich dann noch eine andere Idee "
+"Todo: Abfahrt Delay min // Linien Text //  Tageszeit. Noch einmal durchgehen View. Evtl habe ich dann noch eine andere Idee 
+Am Schluss ggf. notieren, welches Model ich vorschlagen würde, in bezug vielleicht zum R^2"
 
 
 
