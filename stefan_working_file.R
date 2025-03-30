@@ -95,9 +95,9 @@ summary(lm.temperature_tageszeit_interaction)
 
 
 #--------------------------------------------------
-#GAM
+# Generalised Additive Models GAM
 
-
+##Polynominals (not sure if include in the final file)
 #creating a subset
 "I would to analyse the data in function of delay with weather data among others. The ZB line goes throw different climate region. There I want to analyse just the ZB line which is in the region of Lucerne. "
 
@@ -137,7 +137,7 @@ gg.delay_precip + geom_smooth()
 "Without log the regression line was almost flat. With log it became more curved. This suggests an increase exponentially rather than linearly with precipitation."
 
 
-#Model with several parameter measuring collinearity
+#Model with several parameter measuring collinearity (not sure if include in the final file)
 library(car)
 lm.delay_hour_several_parameter_1 <- lm(ANKUNFTDELAY_min ~ STUNDE_ANKUNFT + w_temp_avg_c_Luzern + w_precip_mm_Luzern + RUSH_HOUR + TAGESZEIT, data = zb_final_subset)
 
@@ -151,6 +151,7 @@ In the summary we can see the only predictors which is not statistically signifi
 VIF shows us that RUSH_HOUR has a GVIF of 6.18 and TAGESZEIT 7.26. This confirms that I should not use those predictors and remove them from my model.
 "
 
+##Quadratic effects (not sure if include in the final file)
 #model with several parameters
 lm.delay_hour_temp_precip <- lm(ANKUNFTDELAY_min ~ STUNDE_ANKUNFT + w_temp_avg_c_Luzern + w_precip_mm_Luzern, data = zb_final_subset)
  
@@ -158,8 +159,59 @@ lm.delay_hour_temp_precip_quadratic <- update(lm.delay_hour_temp_precip, .~. + I
 "I have added here 3 quadratic terms. The model fitts better however it is more complex, danger of overfitting. Maybe a model with just one quadratic term should be considered"
 
 anova(lm.delay_hour_temp_precip, lm.delay_hour_temp_precip_quadratic)
+"The Res.Df is lower in the second model by 3 degrees because I added 3 quadratic terms. The RSS decreased which means that the quadratic model explains more variance in the data. 
+The F-statistic is quite high which shows that the added quadratic terms significantly improve the model.
+The p-value is close to 0 which means that the improvement is statistically highly significant. This suggests that I should use a quadratic model instead of a linear model.
+Nevertheless, there is the risk of overfitting because adding too many terms might capture noise rather than relevant patterns"
 
-"Stopped at page 5 but need to read collinearity isues at page 18 "
 
+## Generalised Additive Models GAM
+
+" !!!!! INFORMATION FOR ME: GAM NOT USE FOR COUNT DATA. CATEGORICAL YES BUT WITHOUT SMOOTHER !!!!!"
+
+library(mgcv)
+
+gam_trial_1 <- gam(ANKUNFTDELAY_min ~ s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern) +LINIEN_TEXT + HALTESTELLEN_NAME, data = zb_final_subset) 
+
+summary (gam_trial_1)
+
+plot(gam_trial_1, residuals = TRUE, cex = 2)
+
+"I am not sure if the categorical works witht this gam model. I will try now a simple model to see the effect on the results. "
+
+gam_trial_temp <- gam(ANKUNFTDELAY_min ~ s(w_temp_avg_c_Luzern), data = zb_final_subset) 
+
+summary (gam_trial_temp)
+
+plot(gam_trial_temp, residuals = TRUE, cex = 2)
+
+"p-value is close to 0. Therefore, we have strong evidence that the smooth terme is not equal to 0.
+The predictor w_temp_avg_c_Luzern has an effect on ANKUNFTDELAY_min equal to polinominal degree 9. 
+However, the R^2 shows just 0.05% meaning that the model doesnt represent well the reality."
+
+gam_trial_precip <- gam(ANKUNFTDELAY_min ~ s(w_precip_mm_Luzern), data = zb_final_subset) 
+
+summary (gam_trial_precip)
+
+plot(gam_trial_precip, residuals = TRUE, cex = 2)
+
+"p-value is close to 0. Therefore, we have strong evidence that the smooth terme is not equal to 0.
+The predictor w_precip_mm_Luzern has an effect on ANKUNFTDELAY_min equal to polinominal degree 9. 
+However, the R^2 shows just 0.03% meaning that the model doesnt represent well the reality and represents it even less well than with w_temp_avg_c_Luzern."
+
+gam_trial_Abfahrt_Ankunft <- gam(ABFAHRTDELAY_min ~ s(ANKUNFTDELAY_min), data = zb_final) 
+
+summary (gam_trial_Abfahrt_Ankunft)
+
+plot(gam_trial_Abfahrt_Ankunft, residuals = TRUE, cex = 2)
+
+"My idea behind this model: I wanted to see the effect delay arrival has on depature. Of course, the delay arrival has a strong influence on depature delay.
+However, often trains can catch up esplicity because of the cap between arrival and depature.Therefore, it would be interesting to know which delay duration on 
+arrival has an influence depature delay. When can the train catch up again completly? When just reducing the delay?
+I used here the full dataset and not the subset because the model did not depend on a weather region"
+
+"p-value is close to 0. Therefore, we have strong evidence that the smooth terme is not equal to 0.
+The predictor ANKUNFTDELAY_min has an effect on ABFAHRTDELAY_min equal to polinominal degree 8. 
+The R^2 shows 80% meaning that the model represents well the reality (which is obvious because arrival delay has mostly an influence on depature delay).
 
 
