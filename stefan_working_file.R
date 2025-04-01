@@ -272,6 +272,12 @@ gam_temp_precip_tageszeit <- gam(ABFAHRTDELAY_min ~ TAGESZEIT  + s(w_temp_avg_c_
 
 summary(gam_temp_precip_tageszeit)
 
+plot(gam_temp_precip_tageszeit, residuals = TRUE, select = 1)
+
+plot(gam_temp_precip_tageszeit, residuals = TRUE, select = 2)
+
+
+
 "Interpretation parametric coefficients:
 Morning, lunch, afternoon, night predictos are statistically significant. All those predictors' p-value besides the morning predictor are close to 0. The morning's p-value is with 0.031 still significant.
 This means that all those predictors differ statistically significant on average from their reference category which is evening.
@@ -292,9 +298,16 @@ R^2 shows that the model represents 7.6% of the reality which is less than gam_t
 The challenge with our data is that we have several count and categorical predictors but just a few continous predictors. 
 Lets have now a look at a bit more complex model with several count and categorical predictors. Will the smooth terms and the plot change even though we have the same continous predictors?"
 
+
+
+
 gam_temp_precip_tageszeit_linien_text <- gam(ABFAHRTDELAY_min ~ TAGESZEIT + LINIEN_TEXT + s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern), data = zb_final_subset) 
 
 summary(gam_temp_precip_tageszeit_linien_text)
+
+plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 1)
+plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 2)
+
 
 
 
@@ -323,7 +336,22 @@ The S44 line has on average 1.57 minutes less delay than EXT (p = 0.0007), showi
 The S5 line exhibits on average 1.09 minutes less delay than EXT (p = 0.017), confirming a statistically significant difference.
 The S55 line shows the largest reduction, with on average 2.70 minutes less delay than EXT (p < 0.001), making it the most punctual train line relative to EXT.
 All the LINIEN_TEXT predictors, except for IR, have p-values smaller than 0.05, indicating that they have a significant effect on departure delay. This suggests that the departure delays for the PE, S4, S41, S44, S5, and S55 lines differ significantly from the EXT line, meaning their differences are not equal to zero. In contrast, the IR line does not show a statistically significant difference from the EXT line.
+
+
+The adjusted R^2 for this model is 0.0979, indicating that approximately 9.88% of the variance in departure delay (ABFAHRTDELAY_min) is explained by the predictors TAGESZEIT, LINIEN_TEXT, w_temp_avg_c_Luzern, and w_precip_mm_Luzern.
+It is the highest R^2 compared to the other GAM models.
+While this value suggests that a large proportion (~90%) of the variability in train departure delays remains unexplained, this is expected in real-world transportation data. Delays are often influenced by unobserved factors such as operational constraints, temporary disruptions, infrastructure issues, or human decision-making, which are not included in the model.
+Despite the relatively low R², the model still provides valuable insights into significant predictors of train delays. The results confirm that time of day (TAGESZEIT), train line (LINIEN_TEXT), temperature, and precipitation all have statistically significant effects on departure delays, contributing to a better understanding of the factors influencing punctuality.
 "
+
+"Although the model includes multiple predictors, the smooth terms and their respective plots remain consistent with those observed in the gam_temp_precip_haltestellen model. 
+This indicates that while additional categorical variables enhance the model's explanatory power, the overall influence of temperature and precipitation on departure delay follows 
+a similar pattern. By incorporating various predictor variables, we have effectively explored all possible ways to utilize Generalized Additive Models (GAM) with our dataset, 
+ensuring a comprehensive analysis of the factors influencing train delays.
+"
+
+
+
 
 
 
