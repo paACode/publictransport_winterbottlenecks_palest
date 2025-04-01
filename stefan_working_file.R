@@ -265,13 +265,16 @@ The plots are very similar to those for gam_temp_precip_haltestellen; therefore,
 
 "
 
+"Until now we have used ANKUNFTDELAY_min as a response variable. The parametric coefficients were different due to different count and categorical predictors. The smooth terms and the plot from the different models were similar though. 
+Lets have now a look at GAM models with ABFAHRTDELAY_min as response variable with different predictors. "
+
 gam_temp_precip_tageszeit <- gam(ABFAHRTDELAY_min ~ TAGESZEIT  + s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern), data = zb_final_subset) 
 
 summary(gam_temp_precip_tageszeit)
 
 "Interpretation parametric coefficients:
 Morning, lunch, afternoon, night predictos are statistically significant. All those predictors' p-value besides the morning predictor are close to 0. The morning's p-value is with 0.031 still significant.
-This means that all those predictors differ statistically significant on average from their regerence category which is evening.
+This means that all those predictors differ statistically significant on average from their reference category which is evening.
 Lets have a more detailed look:
 In the evening the delay of ZB trains in the region of Lucerne is on average 0.75 min if the temperature is 0C and precipitation is 0mm.
 During lunch time the trains are on average 0.46 min less delayed than in the evening, assuming constant temperature and precipitation. 
@@ -285,11 +288,47 @@ The smooth terms and plots are the same as gam_temp_precip_haltestellen; therefo
 R^2 shows that the model represents 7.6% of the reality which is less than gam_temp_precip_haltestellen and gam_temp_precip_rush_hour.
 "
 
+"We have seen so fare different GAM models and realized that the smooth terms and plots hardly changed. 
+The challenge with our data is that we have several count and categorical predictors but just a few continous predictors. 
+Lets have now a look at a bit more complex model with several count and categorical predictors. Will the smooth terms and the plot change even though we have the same continous predictors?"
+
+gam_temp_precip_tageszeit_linien_text <- gam(ABFAHRTDELAY_min ~ TAGESZEIT + LINIEN_TEXT + s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern), data = zb_final_subset) 
+
+summary(gam_temp_precip_tageszeit_linien_text)
+
+
+
+"Interpretation parametric coefficients
+The reference level for the categorical predictor TAGESZEIT is Abend (Evening), and for LINIEN_TEXT, it is EXT.
+The EXT line of Zentralbahn (ZB) in the Lucerne region has an average departure delay of 2.03 minutes during the evening, assuming a temperature of 0°C and no precipitation (0 mm).
+
+Effect of Time of Day (TAGESZEIT) on Departure Delays keeping all other variables constant:
+
+Departure delays vary significantly based on the time of day.
+During lunch (Mittag), trains experience on average 0.52 minutes less delay compared to the evening.
+In the afternoon (Nachmittag), departure delays are on average 0.31 minutes lower than in the evening.
+During night (Nacht) operations, trains have on average 0.42 minutes less delay compared to the evening.
+In the morning (Vormittag), delays are on average 0.09 minutes lower than in the evening.
+
+All the predictors have p-values smaller than 0.05, indicating that they have a significant effect on departure delay. Furthermore, the predictors lunch, afternoon, night, and morning differ significantly from evening, meaning their differences are not equal to zero.
+
+Effect of Train Lines (LINIEN_TEXT) on Departure Delays:
+
+The departure delays of various train lines are compared against the reference category EXT under the assumption of evening time, 0°C temperature and no precipitation:
+The IR line has on average 0.67 minutes less delay than EXT, but this difference is not statistically significant (p = 0.14). This means we cannot conclude that the IR line experiences fewer or more delays than EXT.
+The PE line experiences on average 3.12 minutes less delay compared to EXT (p = 0.039), meaning it has significantly fewer delays.
+The S4 line has on average 1.34 minutes less delay compared to EXT (p = 0.003). This difference is statistically significant.
+The S41 line experiences on average 2.02 minutes less delay than EXT (p < 0.001), indicating a strong reduction in departure delays.
+The S44 line has on average 1.57 minutes less delay than EXT (p = 0.0007), showing a statistically significant improvement.
+The S5 line exhibits on average 1.09 minutes less delay than EXT (p = 0.017), confirming a statistically significant difference.
+The S55 line shows the largest reduction, with on average 2.70 minutes less delay than EXT (p < 0.001), making it the most punctual train line relative to EXT.
+All the LINIEN_TEXT predictors, except for IR, have p-values smaller than 0.05, indicating that they have a significant effect on departure delay. This suggests that the departure delays for the PE, S4, S41, S44, S5, and S55 lines differ significantly from the EXT line, meaning their differences are not equal to zero. In contrast, the IR line does not show a statistically significant difference from the EXT line.
+"
+
+
 
 
 "Todo: Abfahrt Delay min // Linien Text //  Tageszeit. Noch einmal durchgehen View. Evtl habe ich dann noch eine andere Idee 
 Am Schluss ggf. notieren, welches Model ich vorschlagen würde, in bezug vielleicht zum R^2"
-
-
 
 
