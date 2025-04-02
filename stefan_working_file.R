@@ -309,8 +309,6 @@ plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 1)
 plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 2)
 
 
-
-
 "Interpretation parametric coefficients
 The reference level for the categorical predictor TAGESZEIT is Abend (Evening), and for LINIEN_TEXT, it is EXT.
 The EXT line of Zentralbahn (ZB) in the Lucerne region has an average departure delay of 2.03 minutes during the evening, assuming a temperature of 0°C and no precipitation (0 mm).
@@ -354,9 +352,19 @@ ensuring a comprehensive analysis of the factors influencing train delays.
 
 
 
-
-
 "Todo: Abfahrt Delay min // Linien Text //  Tageszeit. Noch einmal durchgehen View. Evtl habe ich dann noch eine andere Idee 
 Am Schluss ggf. notieren, welches Model ich vorschlagen würde, in bezug vielleicht zum R^2"
 
+
+#Ramon codes
+
+mm <- zb_final_subset$w_temp_avg_c_Luzern
+
+summary(mm)
+
+hist(zb_final_subset$w_precip_mm_Luzern)
+
+sum(mm==37.1)
+
+factor(mm)
 
