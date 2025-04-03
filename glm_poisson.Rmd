@@ -300,10 +300,91 @@ to our model
 
 - We can make an easier Model Based on the Operation Class
 
+# Start of Poisson Analysis
 
+```{r Prepare Data for Poisson, include=FALSE}
 
-```{r Chunk Example 3 : My code and result is included in the Document, include=TRUE, echo=TRUE}
+d.delayed_trains <- d.zentrahlbahn %>%
+  filter(!is.na(operating_hour)) %>%  # Removes NA observations --> This are the Abfahrtszüge
+  group_by(operating_hour, BETRIEBSTAG) %>%
+  summarize(Count_Delayed = sum(Delay_Category != "On Time"), .groups = "drop") %>% 
+  ungroup()
 
-a= 5
-print(a)
 ```
+
+A first look at the data shows that the data are right skewed. When we log transform it, the data looks normally distributed
+
+```{r Prepare Data for Poisson, include=TRUE}
+hist(d.delayed_trains$Count_Delayed, breaks = 20)
+hist(log1p(d.delayed_trains$Count_Delayed), breaks=20)
+
+```
+
+Simulating a first GLM Poisson model that tries to predict the delay count per day, dependent on the working hour is simulated here. What is interesting is that the outliers are not present
+in the simulated data. This could explain that there is other influences we do not track.
+
+```{r GLM Poisson: Influence of Operating Hour, include=TRUE}
+library(ggplot2)
+glm.delay_count <- glm(Count_Delayed ~ operating_hour,
+family = "poisson", data = d.delayed_trains)
+
+
+
+#We do some simulation of this model
+set.seed(12) 
+
+sim.data.delay_count <- simulate(glm.delay_count)
+
+ggplot(mapping = aes(y = sim.data.delay_count$sim_1,
+x = d.delayed_trains$operating_hour)) +
+  geom_boxplot() + 
+  geom_hline(yintercept = 0) + 
+  geom_jitter(width = 0.2, height = 0.1, color = "blue", alpha = 0.2)+
+  labs(title = "Delayed Trains Count", 
+       x = "Operating Hour", 
+       y = "Simulated Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+Having a look if there are specific days in November . It looks like there is the 21. November and 22. November having way bigger  delays. But what is even much more interesting is that
+from 25. November on the delays are in average smaller.
+
+```{r Look at Days, include=TRUE}
+
+ggplot(mapping = aes(y = d.delayed_trains$Count_Delayed,
+x = d.delayed_trains$BETRIEBSTAG)) +
+  geom_boxplot() + 
+  geom_hline(yintercept = 0) + 
+  geom_jitter(width = 0.2, height = 0.1, color = "blue", alpha = 0.2)+
+  labs(title = "Delayed Trains Count", 
+       x = "Operating Hour", 
+       y = "Simulated Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+So we try a more refined model again: MAybe need to use quasipoissson! Need to discuss.
+
+We have so many different levels. so maybe it makes sense to group the levels to make the model a bit easier. For this we use Multiple Comparison --> unfortunately i cannot make it rnu because i get a precision error
+
+
+```{r Look at Days, include=TRUE}
+#Need to have Predictors as Factor forlater Multiple comparison
+d.delayed_trains$BETRIEBSTAG <-  as.factor(d.delayed_trains$BETRIEBSTAG)
+d.delayed_trains$operating_hour <-  as.factor(d.delayed_trains$operating_hour)
+
+glm.delay_count <- glm(Count_Delayed ~ operating_hour + BETRIEBSTAG,
+family = "quasipoisson", data = d.delayed_trains)
+
+#drop1(glm.delay_count,test = "F")
+
+
+require(multcomp)
+glht.1 <-  glht(glm.delay_count, linfct = mcp(operating_hour = "Tukey"))
+
+glht.1
+
+
+```
+
+
