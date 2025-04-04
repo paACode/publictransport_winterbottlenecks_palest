@@ -300,7 +300,7 @@ to our model
 
 - We can make an easier Model Based on the Operation Class
 
-# Start of Poisson Analysis
+# Poisson Model
 
 ```{r Prepare Data for Poisson, include=FALSE}
 
@@ -312,13 +312,137 @@ d.delayed_trains <- d.zentrahlbahn %>%
 
 ```
 
-A first look at the data shows that the data are right skewed. When we log transform it, the data looks normally distributed
+## Overview
 
-```{r Prepare Data for Poisson, include=TRUE}
-hist(d.delayed_trains$Count_Delayed, breaks = 20)
-hist(log1p(d.delayed_trains$Count_Delayed), breaks=20)
+The goal of this model is to predict the number of delayed trains based on several predictors. The number of delayed trains is aggregated to "operating hour" and "operation day". This means:
+
+ - there are 30 observatios per "operating hour" because the dataset contains the month november, which has 30 days.
+ - there are 22 observations per "operating day" because there are in total 23 operating hours , and between 1am and 2am there is no operation
+
+
+Since the response variable is a count-variable, we expect it to exhibit right skewness and increasing variance as the count increases.
+
+Plotting the data reveals that indeed the count-variable is right-skewed.
+
+```{r Hist Skewed, include=TRUE}
+par(mfrow=c(1,2))
+hist(d.delayed_trains$Count_Delayed, breaks = 20, main= "Original", xlab = "Count 'Delayed Trains '")
+hist(log1p(d.delayed_trains$Count_Delayed), breaks=20, main = "Log Transformed ", xlab = "Count 'Delayed Trains'")
 
 ```
+The quartile boxplot does not support the assumption that the variance increases linearly with the mean. This suggests that the count variable may not follow a Poisson distribution. This is an initial indication that the GLM should be fitted with a quasipoisson family to account for overdispersion.
+
+```{r Overdispersion, include=TRUE}
+quantile_groups <- cut(d.delayed_trains$Count_Delayed, breaks=quantile(d.delayed_trains$Count_Delayed), 
+                       include.lowest=TRUE, labels=c("Q1", "Q2", "Q3", "Q4"))
+
+boxplot(d.delayed_trains$Count_Delayed ~quantile_groups)
+
+```
+## Finding reasonable Predictors "Operation Category"
+
+Having a predictor operating hour with 24 levels makes the interpretation of the model quite complicated. 
+Therfore a first visual analisi of the data should give an idea if the predictor "operating-hour" can be simplified.
+
+
+
+```{r Overdispersion, include=TRUE}
+ggplot(d.delayed_trains, aes(x =  operating_hour, 
+                           y = Count_Delayed)) +
+  geom_boxplot() +
+   geom_jitter(width = 0.2, height = 0.1, color = "blue", alpha = 0.2)+
+  labs(title = "Delayed Trains Count", 
+       x = "Operating Hour", 
+       y = "Nr of Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+![Rush Hour Image](Rush_Hours.png)
+
+Indeed there seems to be a pattern in "operation hour" which can be simplified by "operation category" with 3 levels:
+
+ - Low Operation : (0:00 until 6:00)
+ - Rush Hour : (6:00 until 9:00) and (11:00 until 14:00) and (16:00 until 20:00)
+ - Normal Operation : Everything else
+
+```{r Operation Category, include=TRUE}
+
+
+d.zentrahlbahn <- d.zentrahlbahn %>%
+  mutate(
+    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT, format="%Y-%m-%d %H:%M:%S"),
+    operation_category = case_when(
+      (hour(ANKUNFTSZEIT) >= 0 & hour(ANKUNFTSZEIT) < 2)|
+      (hour(ANKUNFTSZEIT) >= 4 & hour(ANKUNFTSZEIT) < 5) ~ "Low Operation",    # 0am to 6am
+      (hour(ANKUNFTSZEIT) >= 6 & hour(ANKUNFTSZEIT) < 9) |  # 6am to 9am
+        (hour(ANKUNFTSZEIT) >= 11 & hour(ANKUNFTSZEIT) < 14) | # 11am to 2pm
+        (hour(ANKUNFTSZEIT) >= 16 & hour(ANKUNFTSZEIT) < 20) ~ "Rush Hour", # 4pm to 8pm
+      TRUE ~ "Normal Operation"   # Everything else
+    )
+  )
+
+d.delayed.trains.simplified <- d.zentrahlbahn %>%
+  filter(!is.na(operating_hour)) %>%  # Removes NA observations --> This are the Abfahrtszüge
+  group_by(operation_category, BETRIEBSTAG) %>%
+  summarize(Count_Delayed = sum(Delay_Category != "On Time"), .groups = "drop") %>% 
+  ungroup()
+
+ggplot(d.delayed.trains.simplified, aes(x = operation_category , 
+                           y = Count_Delayed)) +
+  geom_boxplot() +
+   geom_jitter(width = 0.2, height = 0.01, color = "blue", alpha = 0.2)+
+  labs(title = "Delayed Trains Count", 
+       x = "Operation Category", 
+       y = "Nr of Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+With Anova and Multiple Comparison it can be confirmed what is already clear by visualizing the Boxplot. 
+- Anova: At least one of the 3 Levels differs significantly.
+- Multiple Comparison: All the 3 Levels differ significantly
+
+
+```{r GLM Poisson: Influence of Operating Hour, include=TRUE}
+library(multcomp)
+d.delayed.trains.simplified$operation_category <- as.factor(d.delayed.trains.simplified$operation_category)
+anova_model <- aov(Count_Delayed ~operation_category, data = d.delayed.trains.simplified)
+summary(anova_model)  # Overall ANOVA table
+
+mc <- glht(anova_model, linfct = mcp(operation_category = "Tukey"))
+summary(mc)
+```
+
+## Finding reasonable Predictors "Event Category"
+
+Creating a level for each Day in November does not make sense. Therefore data are again visualized to see if there are any patterns so that
+predictor can be simplified.
+
+Here it would make sense to create the following 3 Levels:
+
+-  Extreme Days: 22.11 and 23.11
+-  Meiringen Reopened : After 25.11
+-  Normal Operation
+
+
+```{r Look at Days, include=TRUE}
+
+ggplot(mapping = aes(y = d.delayed_trains$Count_Delayed,
+x = d.delayed_trains$BETRIEBSTAG)) +
+  geom_boxplot() + 
+  geom_hline(yintercept = 0) + 
+  geom_jitter(width = 0.5, height = 0.3, color = "blue", alpha = 0.2)+
+  labs(title = "Delayed Trains Count", 
+       x = "Operating Hour", 
+       y = "Simulated Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+
 
 Simulating a first GLM Poisson model that tries to predict the delay count per day, dependent on the working hour is simulated here. What is interesting is that the outliers are not present
 in the simulated data. This could explain that there is other influences we do not track.
@@ -368,7 +492,7 @@ So we try a more refined model again: MAybe need to use quasipoissson! Need to d
 We have so many different levels. so maybe it makes sense to group the levels to make the model a bit easier. For this we use Multiple Comparison --> unfortunately i cannot make it rnu because i get a precision error
 
 
-```{r Look at Days, include=TRUE}
+```{r Look at Days 2, include=TRUE}
 #Need to have Predictors as Factor forlater Multiple comparison
 d.delayed_trains$BETRIEBSTAG <-  as.factor(d.delayed_trains$BETRIEBSTAG)
 d.delayed_trains$operating_hour <-  as.factor(d.delayed_trains$operating_hour)
