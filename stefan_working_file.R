@@ -167,17 +167,7 @@ Nevertheless, there is the risk of overfitting because adding too many terms mig
 
 ## Generalised Additive Models GAM
 
-" !!!!! INFORMATION FOR ME: GAM NOT USE FOR COUNT DATA. CATEGORICAL YES BUT WITHOUT SMOOTHER !!!!!"
-
 library(mgcv)
-
-gam_trial_1 <- gam(ANKUNFTDELAY_min ~ s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern) +LINIEN_TEXT + HALTESTELLEN_NAME, data = zb_final_subset) 
-
-summary (gam_trial_1)
-
-plot(gam_trial_1, residuals = TRUE, cex = 2)
-
-"I am not sure if the categorical works witht this gam model. I will try now a simple model to see the effect on the results. "
 
 gam_trial_temp <- gam(ANKUNFTDELAY_min ~ s(w_temp_avg_c_Luzern), data = zb_final_subset) 
 
@@ -367,4 +357,7 @@ hist(zb_final_subset$w_precip_mm_Luzern)
 sum(mm==37.1)
 
 factor(mm)
+
+
+
 
