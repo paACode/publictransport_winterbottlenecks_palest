@@ -118,7 +118,7 @@ Therfore a first visual analisi of the data should give an idea if the predictor
 
 
 
-```{r Overdispersion, include=TRUE}
+```{r Nr of Delay aggregated per Day and Operating Hour, include=TRUE}
 ggplot(d.poisson.agg.day.oh, aes(x =  operating_hour, 
                            y = Count_Delayed)) +
   geom_boxplot() +
@@ -137,11 +137,13 @@ ggplot(d.poisson.agg.day.oh, aes(x =  operating_hour,
 
 
 
-Indeed there seems to be a pattern in "operation hour" which can be simplified by "operation category" with 3 levels:
+Indeed there seems to be a pattern in "operation hour". In a first step, the "operation- hour" is simplified by "operation category" with 3 levels:
 
  - Low Operation : (0:00 until 6:00)
  - Rush Hour : (6:00 until 9:00) and (11:00 until 14:00) and (16:00 until 20:00)
  - Normal Operation : Everything else
+ 
+In the boxplot below a direct comparison of delayed train counts across operation categories isn't meaningful, since each category includes a different total number of train arrivals.
 
 ```{r Add Operation Category, include=TRUE}
 
@@ -176,30 +178,64 @@ ggplot(d.poisson.agg.day.oc, aes(x = operation_category ,
 
 ```
 
+In the next step, the delay counts are normalized by the total number of trains per category. As a result, the differences between the boxplots become much less pronounced
 
-With Anova and Multiple Comparison it can be confirmed what is already clear by visualizing the Boxplot. 
-- Anova: At least one of the 3 Levels differs significantly.
-- Multiple Comparison: All the 3 Levels differ significantly
+```{r Normalize for compariosn, include=TRUE}
+# Count of observations per operation_category
+category_counts <- d.poisson %>%
+  filter(operation_category %in% c("Low Operation", "Normal Operation", "Rush Hour")) %>%
+  group_by(operation_category) %>%
+  summarise(count = n())
+
+category_counts
+
+# Merge the count per operation_category with the dataframe
+d.poisson.agg.day.oc <- d.poisson.agg.day.oc %>%
+  left_join(category_counts, by = "operation_category") %>%
+  mutate(Count_Delayed_Norm = Count_Delayed / count)  # Normalization step
+
+ggplot(d.poisson.agg.day.oc, aes(x = operation_category, 
+                                 y = Count_Delayed_Norm)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, height = 0.01, color = "blue", alpha = 0.2) +
+  labs(title = "Normalized Delayed Trains Count", 
+       x = "Operation Category", 
+       y = "Normalized Nr of Observations that were Delayed") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+We now perform an ANOVA followed by multiple comparison testing to statistically assess the differences observed in the boxplot.
+
+ - ANOVA confirms that there is a statistically significant difference between at least one of the three operation categories.
+
+ - The multiple comparison test reveals that not all pairwise differences are significant. While 'Low Operation' differs significantly from both 'Normal Operation' and 'Rush Hour', the difference between 'Normal Operation' and 'Rush Hour' is not statistically significant.
+
+This supports our earlier observation from the boxplot and confirms that the predictor is overall significant, though not all categories differ from each other
+
+
 
 
 ```{r GLM Poisson: Influence of Operating Hour, include=TRUE}
 library(multcomp)
 d.poisson.agg.day.oc$operation_category <- as.factor(d.poisson.agg.day.oc$operation_category)
-anova_model <- aov(Count_Delayed ~operation_category, data = d.poisson.agg.day.oc)
+anova_model <- aov(Count_Delayed_Norm ~operation_category, data = d.poisson.agg.day.oc)
 summary(anova_model)  # Overall ANOVA table
 
 mc <- glht(anova_model, linfct = mcp(operation_category = "Tukey"))
 summary(mc)
 ```
-
+To conclude, the analysis has revealed a valuable predictor that will be utilized in the subsequent modeling phase
 
 
 ## Finding reasonable Predictors "Event Category"
 
 Creating a level for each Day in November does not make sense. Therefore data are again visualized to see if there are any patterns so that
-predictor can be simplified.
+predictor can be simplified. In the boxplot there are 22 observation per "operation day". One obsevation per operating hour.
 
-Here it would make sense to create the following 3 Levels:
+The boxplot proposes a separtion into the following 3 Levels:
 
 -  Extreme Days: 22.11 and 23.11
 -  Meiringen Reopened : After 25.11
@@ -239,18 +275,31 @@ d.poisson.agg.day.dc <- d.poisson %>%
   filter(!is.na(operating_hour)) %>%  # Removes NA observations --> This are the Abfahrtszüge
   group_by(day_category,operating_hour) %>%
   summarize(Count_Delayed = sum(Delay_Category != "On Time"), .groups = "drop") %>% 
-  group_by(day_category) %>%  # Group by day_category to get the total for each category
-  mutate(Count_Delayed_Norm = Count_Delayed / sum(Count_Delayed)) %>%  # Normalize by total Count_Delayed within each day_category
   ungroup()  # Ungroup after mutation
 
 
 ggplot(d.poisson.agg.day.dc, aes(x = day_category , 
-                           y = Count_Delayed_Norm)) +
+                           y = Count_Delayed)) +
   geom_boxplot() +
-   geom_jitter(width = 0.2, height = 0.01, color = "blue", alpha = 0.2)+
+  geom_jitter(width = 0.2, height = 0.01, color = "blue", alpha = 0.2)+
+    stat_summary(
+    fun = "mean", 
+    geom = "text", 
+    aes(label = round(..y.., 2)),  # Rounds the mean to 2 decimal places
+    vjust = -1, 
+    color = "black"
+  )+
   labs(title = "Delayed Trains Count", 
        x = "Operation Category", 
        y = "Nr of Observations that were Delayed per Day") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+```
+
+
+```{r Observatrions per day category, include=TRUE}
+d.poisson %>%
+  filter(day_category %in% c("Extreme Days", "Meiringen Reopened", "Normal Operation")) %>%
+  group_by(day_category) %>%
+  summarise(count = n())
 ```
