@@ -10,6 +10,15 @@ zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors =
 str(zb_final)
 
 ## Subset the data
+
+# Define the specific Haltestellen
+haltestellen_to_keep <- c("Luzern", "Luzern Allmend/Messe", "Kriens Mattenhof", "Horw", 
+                          "Hergiswil Matt", "Hergiswil NW", "Stansstad", "Stans")
+
+# Subset the data
+zb_final_subset <- zb_final %>%
+  filter(HALTESTELLEN_NAME %in% haltestellen_to_keep)
+
 zb_final_subset <- zb_final %>%
   filter(HALTESTELLEN_NAME %in% haltestellen_to_keep)
 
