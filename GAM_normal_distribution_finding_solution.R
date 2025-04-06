@@ -24,7 +24,23 @@ zb_final_subset <- zb_final %>%
 
 str(zb_final_subset)
 
+#Removing rows NA in ANKUNFTDELAY_min
 
+zb_final_subset <- zb_final_subset %>%
+  filter(!is.na(ANKUNFTDELAY_min))
+
+sum(is.na(zb_final_subset$ANKUNFTDELAY_min)) #Checking if ANKUNFTDELAY_min NA is 0
+
+zb_final_subset <- zb_final_subset %>%
+  filter(!is.na(ABFAHRTDELAY_min))
+
+sum(is.na(zb_final_subset$ABFAHRTDELAY_min)) #Checking if ABFAHRTDELAY_min NA is 0
+
+#Keeping just the columns which I need for these models
+
+zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, TAGESZEIT, RUSH_HOUR, w_pressure_hpa_Luzern, w_temp_max_c_Luzern, STUNDE_ANKUNFT)
+
+View(zb_final_subset)
 
 "For the GAM we will analyse the effect of different predictors on the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min. As our dataset does not contain a wide range of continous data, which is necessary for a GAM model,
 ANKUNFTDELAY_min and ABFAHRTDELAY_min are the only response variable we will use. 

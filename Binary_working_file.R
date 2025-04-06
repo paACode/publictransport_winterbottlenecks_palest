@@ -38,27 +38,21 @@ zb_final_binominal <- zb_final %>%
 
 
 ##Reducing the subbset just with the relevant columns
+zb_final_binominal <- zb_final_binominal %>% select(BETRIEBSTAG, LINIEN_TEXT, FAELLT_AUS_TF, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, AN_PROGNOSE_STATUS, ABFAHRTSZEIT, AB_PROGNOSE, AB_PROGNOSE_STATUS, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, Train_Delayed, TAGESZEIT, RUSH_HOUR, Train_RUSH_HOUR, STUNDE_ANKUNFT)
+
+
+#Removing rows NA in ANKUNFTDELAY_min
+
 zb_final_binominal <- zb_final_binominal %>%
-  select(
-    BETRIEBSTAG,
-    LINIEN_TEXT,
-    FAELLT_AUS_TF,
-    HALTESTELLEN_NAME,
-    ANKUNFTSZEIT,
-    AN_PROGNOSE,
-    AN_PROGNOSE_STATUS,
-    ABFAHRTSZEIT,
-    AB_PROGNOSE,
-    AB_PROGNOSE_STATUS,
-    ABFAHRTDELAY_min,
-    ANKUNFTDELAY_min,
-    Delay_Category,
-    Train_Delayed,
-    TAGESZEIT,
-    RUSH_HOUR,
-    Train_RUSH_HOUR,
-    STUNDE_ANKUNFT
-  )
+  filter(!is.na(ANKUNFTDELAY_min))
+
+sum(is.na(zb_final_binominal$ANKUNFTDELAY_min)) #Checking if ANKUNFTDELAY_min NA is 0
+
+zb_final_binominal <- zb_final_binominal %>%
+  filter(!is.na(ABFAHRTDELAY_min))
+
+sum(is.na(zb_final_binominal$ABFAHRTDELAY_min)) #Checking if ABFAHRTDELAY_min NA is 0
+
 
 str(zb_final_binominal)
 
