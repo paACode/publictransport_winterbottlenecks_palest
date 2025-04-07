@@ -77,7 +77,10 @@ d.poisson <-  d.poisson %>%
 
 d.poisson.agg.day.oh <- d.poisson %>%
   group_by(operating_hour, BETRIEBSTAG) %>% # Aggregate data by operating hour and delay 
-  summarize(Count_Delayed = sum(Delay_Category != "On Time"), .groups = "drop") %>% # Only consider delayed trains
+  summarize(
+    Count_Delayed = sum(Delay_Category != "On Time"), # Only consider delayed trains
+    .groups = "drop"
+    ) %>% 
   ungroup()
 
 ```
@@ -87,6 +90,7 @@ d.poisson.agg.day.oh <- d.poisson %>%
 
 The goal of this model is to predict the number of delayed trains based on several predictors. The number of delayed trains is aggregated to "operating hour" and "operation day". This means:
 
+ - there are in total 660 observations
  - there are 30 observatios per "operating hour" because the dataset contains the month november, which has 30 days.
  - there are 22 observations per "operating day" because there are in total 23 operating hours , and between 1am and 2am there is no operation
 
@@ -322,7 +326,7 @@ boxplot_good <- ggplot(d.poisson.agg.day.dc, aes(x = event_category,
   grid.arrange(boxplot_bad, boxplot_good, ncol=2)
 
 ```
-To statistically assess the differences observed in the boxplot, we conduct an ANOVA followed by multiple comparison testing.
+  To statistically assess the differences observed in the boxplot, we conduct an ANOVA followed by multiple comparison testing.
 
  - The ANOVA confirms that there is a statistically significant difference between at least one of the three day categories.
 
@@ -338,3 +342,26 @@ summary(anova_model)  # Overall ANOVA table
 mc <- glht(anova_model, linfct = mcp(event_category = "Tukey"))
 summary(mc)
 ```
+
+## Finding reasonable Predictors "Weather
+
+No clue yet how to interpret weather data
+
+```{r Weather Data, include=FALSE}
+
+d.poisson.agg.day.weather <- d.poisson %>%
+  group_by(operating_hour, BETRIEBSTAG) %>% # Aggregate data by operating hour and delay 
+  summarize(
+    Count_Delayed = sum(Delay_Category != "On Time"), # Only consider delayed trains
+    daily_min_temp = first(w_temp_min_c_Luzern),
+    daily_precipitation = first(w_temp_min_c_Luzern),
+    .groups = "drop"
+    ) %>% 
+  ungroup()
+
+plot(Count_Delayed ~ daily_min_temp ,  data = d.poisson.agg.day.weather)
+
+plot(Count_Delayed ~ daily_precipitation ,  data = d.poisson.agg.day.weather)
+
+```
+
