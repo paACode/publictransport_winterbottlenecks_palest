@@ -40,17 +40,19 @@ zb_final_binominal <- zb_final %>%
          STUNDE_ANKUNFT, w_temp_avg_c_Luzern) %>%
   
   # Convert the Train_Delayed to numeric (0 = FALSE, 1 = TRUE) in order to be able to use it for a logistic regression model
-  zb_final_binominal$Train_Delayed <- as.numeric(zb_final_binominal$Train_Delayed)
+  mutate(Train_Delayed = as.numeric(Train_Delayed))
 
 # Remove rows with missing delay data
-filter(!is.na(ANKUNFTDELAY_min), !is.na(ABFAHRTDELAY_min))
+zb_final_binominal <- zb_final_binominal %>%
+  filter(!is.na(ANKUNFTDELAY_min), !is.na(ABFAHRTDELAY_min))
 
 # Check for any remaining NAs
 sum(is.na(zb_final_binominal$ANKUNFTDELAY_min))
 sum(is.na(zb_final_binominal$ABFAHRTDELAY_min))
 
+
 # Inspect structure and view
-str(zb_final_binominal)s
+str(zb_final_binominal)
 View(zb_final_binominal)
 
 
