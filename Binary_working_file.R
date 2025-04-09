@@ -36,7 +36,7 @@ zb_final_binominal <- zb_final %>%
     (match("RUSH_HOUR", names(.)) + 1):ncol(.)  # Columns after RUSH_HOUR
   )
 
-##Reducing the subbset just with the relevant columns
+#Reducing the subbset just with the relevant columns
 zb_final_binominal <- zb_final_binominal %>% select(BETRIEBSTAG, LINIEN_TEXT, FAELLT_AUS_TF, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, AN_PROGNOSE_STATUS, ABFAHRTSZEIT, AB_PROGNOSE, AB_PROGNOSE_STATUS, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, Train_Delayed, TAGESZEIT, RUSH_HOUR, Train_RUSH_HOUR, STUNDE_ANKUNFT)
 
 
@@ -207,4 +207,13 @@ Other variables—such as weather, time of day, or operational factors—might i
 the probability of delay (yes/no) based on various predictors. Other variables (like weather, time of day, or other train line-related factors) might influence whether a delay occurs for R71 trains. 
 "
 
+
+#############################
+
+ggplot(data = zb_final_binominal, mapping = aes(x = LINIEN_TEXT, y = predicted_prob)) + 
+  geom_point(alpha = 0.4, color = "darkblue") + 
+  labs(title = "Predicted Probability of Train Delay by Train Line", 
+       x = "Train Line", 
+       y = "Predicted Probability of Delay") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
