@@ -227,7 +227,7 @@ R^2 shows that the model represents 9.5% of the reality. This is the highest gam
 "
 plot(gam_temp_precip_haltestellen, residuals = TRUE, select = 1)
 
-"The effect of temperature on train delays is statistically significant. However, the plot suggests the acutal impact is weak. As the the curve is rather flat, we can assume that temerature is not a strong predictor of ANKUNFTDELAY_min. "
+"The effect of temperature on train delays is statistically significant. However, the plot suggests the acutal impact is weak. As the the curve is rather flat, we can assume that temperature is not a strong predictor of ANKUNFTDELAY_min. "
 
 plot(gam_temp_precip_haltestellen, residuals = TRUE, select = 2)
 

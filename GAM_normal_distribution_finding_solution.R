@@ -5,6 +5,15 @@ library(dplyr)
 library(ggplot2)
 library(mgcv)
 
+"In this project, we apply Generalized Additive Models (GAMs) to analyze the effects of various predictors on train delays, specifically focusing on the response variables ANKUNFTDELAY_min (arrival delay in minutes) and ABFAHRTDELAY_min (departure delay in minutes). 
+Due to the limited availability of continuous variables in our dataset these two delay metrics will be the response variables we will focus on.
+A key subset of our predictors is related to weather conditions. However, because the ZB Bahn railway line spans multiple climatic regions, 
+comparing weather-related predictors across all stations introduces variability that may obscure meaningful patterns. To address this, we restrict our analysis to a subset of stations located within the Lucerne region, where the climate is more uniform. 
+This allows for a more reliable interpretation of the relationship between weather conditions and train delays.
+"
+
+#Creating subset
+
 zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
 
 str(zb_final)
@@ -24,7 +33,7 @@ zb_final_subset <- zb_final %>%
 
 str(zb_final_subset)
 
-#Removing rows NA in ANKUNFTDELAY_min
+#Removing rows NA in ANKUNFTDELAY_min and ABFAHRTDELAY_min
 
 zb_final_subset <- zb_final_subset %>%
   filter(!is.na(ANKUNFTDELAY_min))
@@ -36,64 +45,56 @@ zb_final_subset <- zb_final_subset %>%
 
 sum(is.na(zb_final_subset$ABFAHRTDELAY_min)) #Checking if ABFAHRTDELAY_min NA is 0
 
-#Keeping just the columns which I need for these models
+#Removing trains which have arrived or departured earlier
+zb_final_subset <- zb_final_subset %>%
+  filter(ANKUNFTDELAY_min >= 0, ABFAHRTDELAY_min >= 0)
 
-zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, TAGESZEIT, RUSH_HOUR, w_pressure_hpa_Luzern, w_temp_max_c_Luzern, STUNDE_ANKUNFT)
+#Reducing the subbset just with the relevant columns
+
+zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_max_c_Luzern, STUNDE_ANKUNFT)
+
 
 View(zb_final_subset)
 
-"For the GAM we will analyse the effect of different predictors on the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min. As our dataset does not contain a wide range of continous data, which is necessary for a GAM model,
-ANKUNFTDELAY_min and ABFAHRTDELAY_min are the only response variable we will use. 
 
 
-R assumes for GAM models usually the gaussian family for the predictors. In the upcoming GAM models we will mostly use w_temp_avg_c_Luzern and w_precip_mm_Luzern as predictors.
-Therefore, lets have a look if they are gaussian distributed. 
+"R assumes for GAM models usually the gaussian family for the response variables.Therefore, lets have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are gaussian distributed. 
 "
 
 par(mfrow = c(1, 2))
 
 
-hist(zb_final_subset$w_temp_avg_c_Luzern, main = "Histogram of temp_avg_c_Luzern", xlab = "Temperature (C)", col = "lightblue", breaks = 30)
+hist(zb_final_subset$ANKUNFTDELAY_min, main = "Histogram of ANKUNFTDELAY_min", xlab = "ANKUNFTDELAY_min", col = "lightblue", breaks = 10, xlim = c(-2,8))
 
-hist(zb_final_subset$w_precip_mm_Luzern, main = "Histogram of $w_precip_mm_Luzern", xlab = "Precipitation (mm)", col = "lightblue", breaks = 30)
 
-"We see that both predictors are not normally distributed. Lets have a look at the QQ Plot
+hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", xlab = "ABFAHRTDELAY_min", col = "lightblue", xlim = c(-2,8))
+
+"We see that both response variables are not normally distrubuted. They seem to be right skewed. Lets check with the QQ plots. 
 "
 
 
-qqnorm(zb_final_subset$w_temp_avg_c_Luzern, main = "QQ Plot of temp_avg_c_Luzern")
-qqline(zb_final_subset$w_temp_avg_c_Luzern, col = "red")
+qqnorm(zb_final_subset$ANKUNFTDELAY_min, main = "QQ Plot of ANKUNFTDELAY_min")
+qqline(zb_final_subset$ANKUNFTDELAY_min, col = "red")
 
-qqnorm(zb_final_subset$w_precip_mm_Luzern, main = "QQ Plot of w_precip_mm_Luzern")
-qqline(zb_final_subset$w_precip_mm_Luzern, col = "red")
+qqnorm(zb_final_subset$ABFAHRTDELAY_min, main = "QQ Plot of ABFAHRTDELAY_min")
+qqline(zb_final_subset$ABFAHRTDELAY_min, col = "red")
 
-"Also in the WW Plot we see that the predictors are not normally distributed."
+"The QQ plots indicate that the response variables are right-skewed. Therefore, we apply a log transformation to improve the distribution and better meet model assumptions."
 
-"Therefore, we have to change the familly for modelling the GAM. 
-There are two options: Gamma distribution or Tweedie distribution.
-
-The challenge is that those models can not handle negative values in the response variables. Delays can not only be delayed but they can also be too early. For example if trains arrive earlier than their planned arrvial time. 
-
-The challenges not normal distribution on the predictor variable side and negative variable on the response predictor side create a conflict of aim. We have draw some limitation in order to be able to fit a GAM model.
-The solution is that we will focus in GAM models only on delayed arrival / depature and neglegt the early arrival / depatures. The GAM requirements will still be fulfilled as delays do not have integer numbers.
-
-Therefore, we create a subset:
-"
-
-zb_final_subset <- zb_final_subset %>%
-  filter(ANKUNFTDELAY_min >= 0 & ABFAHRTDELAY_min >= 0)
-
-View(zb_final_subset)
+# Log transformation (handling 0 values with +1)
+zb_final_subset$log_ANKUNFTDELAY <- log(zb_final_subset$ANKUNFTDELAY_min + 1)
+zb_final_subset$log_ABFAHRTDELAY <- log(zb_final_subset$ABFAHRTDELAY_min + 1)
 
 
-# Plot histogram of the response variable
-hist(zb_final_subset$ANKUNFTDELAY_min, main="Histogram of ANKUNFTDELAY_min", xlab="Arrival Delay (minutes)", col="lightblue", breaks=50)
-hist(zb_final_subset$ABFAHRTDELAY_min, main="Histogram of ANKUNFTDELAY_min", xlab="Arrival Delay (minutes)", col="lightblue", breaks=50)
+# QQ Plot for log(ANKUNFTDELAY_min + 1)
+qqnorm(zb_final_subset$log_ANKUNFTDELAY,
+       main = "QQ Plot of log(ANKUNFTDELAY_min + 1)",
+       col = "darkblue", pch = 19)
+qqline(zb_final_subset$log_ANKUNFTDELAY, col = "red", lwd = 2)
 
+# QQ Plot for log(ABFAHRTDELAY_min + 1)
+qqnorm(zb_final_subset$log_ABFAHRTDELAY,
+       main = "QQ Plot of log(ABFAHRTDELAY_min + 1)",
+       col = "darkblue", pch = 19)
+qqline(zb_final_subset$log_ABFAHRTDELAY, col = "red", lwd = 2)
 
-
-"Here we see that ANKUNFTDELAY_min and ABFAHRTDELAY_min have a large amount of 0. This indiactes that we should rather use Tweedie Distribution.
-"
-
-# Check proportion of zeros in the response variable
-sum(zb_final_subset$ANKUNFTDELAY_min == 0) / length(zb_final_subset$ANKUNFTDELAY_min)
