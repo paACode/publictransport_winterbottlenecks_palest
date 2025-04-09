@@ -58,7 +58,7 @@ str(zb_final_binominal)
 View(zb_final_binominal)
 
 
-#Models
+#Models trial
 
 glm_trial <- glm(Train_Delayed ~ LINIEN_TEXT, family = "binomial", data = zb_final_binominal)
 
