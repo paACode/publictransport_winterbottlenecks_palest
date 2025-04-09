@@ -77,7 +77,7 @@ Since the coefficient for ANKUNFTDELAY_min is positive (0.101845), it suggests t
 Number of Fisher Scoring iterations is 4 which is an acceptable value. 
 "
 
-# Convert the Train_RUSH_HOUR to numeric (0 = FALSE, 1 = TRUE) otherwise we can not with a logistic regression model
+# Convert the Train_RUSH_HOUR to numeric (0 = FALSE, 1 = TRUE) otherwise we can not use it with a logistic regression model
 zb_final_binominal$Train_RUSH_HOUR <- as.numeric(zb_final_binominal$Train_RUSH_HOUR)
 
 #Plotting the model
@@ -153,3 +153,58 @@ The performance metrics of the model suggest moderate predictive power, with an 
 The relationship between ANKUNFTDELAY_min and Train_RUSH_HOUR is evident: a higher ANKUNFTDELAY_min increases the likelihood of a train running during rush hour. This aligns with common operational patterns, such as more trains operating during higher traffic periods like rush hour.
 To improve model performance, especially in predicting rush hour trains (positive class), further exploration could include adding additional predictors, addressing class imbalance, or employing more advanced modeling techniques.
 "
+
+#Models Binary delay
+
+# Convert the Train_Delayed to numeric (0 = FALSE, 1 = TRUE) otherwise we can not use it with a logistic regression model
+zb_final_binominal$Train_Delayed <- as.numeric(zb_final_binominal$Train_Delayed)
+
+str(zb_final_binominal)
+
+
+#Plotting the data
+
+zb_final_binominal %>%
+  group_by(LINIEN_TEXT) %>%
+  summarise(ProportionDelayed = mean(Train_Delayed, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(LINIEN_TEXT, ProportionDelayed), y = ProportionDelayed)) +
+  geom_point(size = 3, color = "steelblue") +
+  labs(x = "Train Line", y = "Proportion Delayed") +
+  theme_minimal()
+
+"In this plot, we can see that the EXT line has the highest proportion of delayed trains, with approximately 40% 
+of its services experiencing delays. The line with the second highest delay rate is the R71, where around 24% of trains are delayed. 
+On the other end of the spectrum, the S41 line shows the lowest delay rate, with only about 10% of its trains being delayed.
+"
+
+"To predict whether a train is delayed, we use a binomial logistic regression with Train_Delayed as the binary response variable 
+and LINIEN_TEXT (train line) as the predictor. This model estimates how the probability of delay varies across different train lines.
+"
+
+glm_delay <- glm(Train_Delayed ~ LINIEN_TEXT, family = "binomial", data = zb_final_binominal)
+
+summary(glm_delay)
+
+"The number of Fisher Scoring iterations is 7, which is an acceptable value.
+On one hand, the p-values for almost all the train lines are very small, indicating that the train lines have a statistically significant 
+effect on whether a train is delayed or not. Since the coefficients for the train lines are negative, it suggests that the different train lines have a 
+lower probability of being delayed compared to the baseline train line.
+On the other hand, the train line R71, which operates between Meiringen and Innertkirchen, has a p-value above 0.05. This suggests that R71 does not have 
+a statistically significant impact on whether a train is delayed or not. This is interesting because, when the predictors were plotted, R71 was the line with 
+the second-highest probability of delay, with an average delay of around 24%.
+The reason for this contradiction could be that while the R71 line might often experience delays, the variance of the delays might be quite narrow. To explore this, 
+let's take a look at the boxplot of the train delays by line.
+"
+
+boxplot(ANKUNFTDELAY_min ~ LINIEN_TEXT , data = zb_final_binominal)
+
+"In the boxplot, we can see that the R71 has a relatively large variance between the 25th and 75th percentiles of the data. 
+Nevertheless, R71 has fewer outliers compared to the other lines. The delays on R71 might be consistent, but not extreme 
+enough to be detected as a significant predictor in the logistic regression model.
+Just because R71 has a relatively high average delay doesn't necessarily mean that the line itself significantly affects the likelihood of delays 
+when considering all other factors. The logistic regression model is trying to predict the probability of a delay (yes/no) based on various predictors. 
+Other variables—such as weather, time of day, or operational factors—might influence whether a delay occurs for R71 trains.e logistic regression model is trying to predict 
+the probability of delay (yes/no) based on various predictors. Other variables (like weather, time of day, or other train line-related factors) might influence whether a delay occurs for R71 trains. 
+"
+
+
