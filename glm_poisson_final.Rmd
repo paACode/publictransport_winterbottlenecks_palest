@@ -41,6 +41,7 @@ library(forcats)
 library(lubridate)
 library(multcomp)
 library(gridExtra)
+library(caret)
 
 #### Read in Data ####----------------------------------------------------------
 d.poisson<- read.csv("zentrahlbahn_final.csv") %>% 
@@ -393,6 +394,23 @@ d.poisson.for.model <- d.poisson %>%
     .groups = "drop"
     ) %>% 
   ungroup()
+```
+"Prior to building the model, 80% of the available data was randomly selected for training. For simplicity, the training data was chosen without stratification.
+
+```{r Test and Train Data, include=FALSE}
+#### Create Test and Train Data
+
+set.seed(123)  # For reproducibility
+
+# Get the number of rows
+n <- nrow(d.poisson.for.model)
+
+# Randomly sample 80% of the indices for the training set
+trainIndex <- sample(seq_len(n), size = 0.8 * n)
+
+# Split the data
+trainData <- d.poisson.for.model[trainIndex, ]
+testData  <- d.poisson.for.model[-trainIndex, ]
 
 ```
 
@@ -401,9 +419,9 @@ To simplify model interpretation, the reference level for both Event Category an
 ```{r GLM Poisson: Prepare Data, include=TRUE, echo= TRUE}
 
 # Prepare Reference Level to Normal Operation
-d.poisson.for.model$event_category <- as.factor(d.poisson.for.model$event_category) %>% 
+trainData$event_category <- as.factor(trainData$event_category) %>% 
   relevel(ref = "Normal Operation")
-d.poisson.for.model$operation_category <- as.factor(d.poisson.for.model$operation_category) %>% 
+trainData$operation_category <- as.factor(trainData$operation_category) %>% 
   relevel(ref = "Normal Operation")
 
 ```
@@ -412,12 +430,12 @@ The initial GLM includes the promising predictors: Operation Category and Event 
 
 Looking at the summary, it becomes clear that the weather data do not significantly contribute to the model.
 
-*Note*: The GLM was run with the "quasipoisson" family due to overdispersion. If the model were run with the "poisson" family, the predictor "daily_min_temp" would appear significant, which is clearly incorrect.
+*Note*: The GLM was run with the "quasipoisson" family due to overdispersion. If the model were run with the "poisson" family, the predictor "daily_min_temp" and "daily_precipitation" would appear significant, which is clearly incorrect.
  
  
 ```{r GLM with Weather, echo=TRUE, include= TRUE}
 glm <- glm(Count_Delayed ~ operation_category + event_category + daily_min_temp + daily_precipitation,
-family = "quasipoisson", data = d.poisson.for.model)
+family = "quasipoisson", data = trainData)
 
 summary(glm)
 
@@ -439,12 +457,12 @@ drop1(glm, Test = "F")
 
 ```{r Final Model, echo=TRUE, include= TRUE}
 glm <- glm(Count_Delayed ~ operation_category + event_category,
-family = "quasipoisson", data = d.poisson.for.model)
+family = "quasipoisson", data = trainData)
 ```
 
 ```{r summary and Coef, echo=TRUE, include= TRUE}
 glm <- glm(Count_Delayed ~ operation_category + event_category,
-family = "quasipoisson", data = d.poisson.for.model)
+family = "quasipoisson", data = trainData)
 
 summary(glm)
 
@@ -463,12 +481,27 @@ The model provides the following results:
 
  - Changing the event to "Extreme Days" (while keeping all other factors constant) results in an average of 28 * 1.6 = 45 delayed observations per hour.
 
- - Changing the event to "Meiringen Reopened" (while keeping all other factors constant) results in an average of 28 * 0.45 = 14 delayed observations per hour.
+ - Changing the event to "Meiringen Reopened" (while keeping all other factors constant) results in an average of 28 * 0.5 = 14 delayed observations per hour.
+
+## Validation
+
+The remaining 132 observations were used to evaluate the model's performance. The plot below highlights considerable uncertainty in the predictions, especially for larger count values, where the model tends to significantly underestimate the actual counts. This may be attributed to the limited number of delay instances in the dataset. 
+```{r Model Validation, echo=FALSE, include= TRUE}
+# Predict on test data
+predicted_counts <- predict(glm, newdata = testData, type = "response")
+
+# Actual counts
+actual_counts <- testData$Count_Delayed
+
+plot(main = "predicted vs actual", predicted_counts ~actual_counts, xlim = c(0,120), ylim = c(0,120))
+
+```
+ 
 
 
 ## Conclusion
 
-The model allows for predicting the expected number of delayed trains per hour across different event and operational categories.
+The model allows for rough predicting the expected number of delayed trains per hour across different event and operational categories.
 However, it's important to keep in mind that the number of delayed trains per category is correlated with the total number of trains operating during that category. Naturally, the more trains are in operation, the higher the likelihood of delays.
 
 
