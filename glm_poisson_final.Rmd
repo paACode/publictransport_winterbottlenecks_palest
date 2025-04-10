@@ -100,21 +100,17 @@ Since the response variable is a count-variable, we expect it to exhibit right s
 Plotting the data reveals that indeed the count-variable is right-skewed.
 
 ```{r Hist Skewed, include=TRUE}
-par(mfrow=c(1,2))
-hist(d.poisson.agg.day.oh$Count_Delayed, breaks = 20, main= "Original", xlab = "Count 'Delayed Trains '")
-hist(log1p(d.poisson.agg.day.oh$Count_Delayed), breaks=20, main = "Log Transformed ", xlab = "Count 'Delayed Trains'")
+par(mfrow=c(1,3))
+hist(d.poisson.agg.day.oh$Count_Delayed, breaks = 20, main= "Original", xlab = "Count 'Delayed Trains'")
+hist(log1p(d.poisson.agg.day.oh$Count_Delayed), breaks=20, main = "Log Transformed ", xlab = "Log (Count 'Delayed Trains')")
+quantile_groups <- cut(d.poisson.agg.day.oh$Count_Delayed, breaks=quantile(d.poisson.agg.day.oh$Count_Delayed),
+                       include.lowest=TRUE, labels=c("Q1", "Q2", "Q3", "Q4"))
+
+boxplot(main = "Quantiles", ylab = "Count 'Delayed Trains'", d.poisson.agg.day.oh$Count_Delayed ~quantile_groups, )
 
 ```
 
 The quartile boxplot does not support the assumption that the variance increases linearly with the mean. This suggests that the count variable may not follow a Poisson distribution. This is an initial indication that the GLM should be fitted with a quasipoisson family to account for overdispersion.
-
-```{r Overdispersion, include=TRUE}
-quantile_groups <- cut(d.poisson.agg.day.oh$Count_Delayed, breaks=quantile(d.poisson.agg.day.oh$Count_Delayed), 
-                       include.lowest=TRUE, labels=c("Q1", "Q2", "Q3", "Q4"))
-
-boxplot(d.poisson.agg.day.oh$Count_Delayed ~quantile_groups)
-
-```
 
 
 ## Finding reasonable Predictors 
@@ -139,10 +135,6 @@ ggplot(d.poisson.agg.day.oh, aes(x =  operating_hour,
 
 
 ```
-
-
-![](Rush_Hours.png)
-
 
 
 Indeed there seems to be a pattern in "operation hour". In a first step, the "operation- hour" is simplified by "operation category" with 3 levels:
@@ -282,7 +274,7 @@ d.poisson <- d.poisson %>%
     )
   )
 
-#Create A subset aggregating by operation day and day category
+#Create A subset aggregating by operation day and event category
 d.poisson.agg.day.dc <- d.poisson %>%
   filter(!is.na(operating_hour)) %>%  # Removes NA observations --> This are the Abfahrtszüge
   group_by(event_category,operating_hour) %>%
@@ -339,7 +331,7 @@ To statistically assess the differences observed in the boxplot, we conduct an A
 
 This indicates that event_category is a strong predictor and will be considered for inclusion in the modeling process.
 
-```{r GLM Poisson: Influence Day Category, include=TRUE}
+```{r GLM Poisson: Influence event category, include=TRUE}
 d.poisson.agg.day.dc$event_category <- as.factor(d.poisson.agg.day.dc$event_category)
 anova_model <- aov(Count_Delayed_Norm ~event_category, data = d.poisson.agg.day.dc)
 summary(anova_model)  # Overall ANOVA table
@@ -459,18 +451,24 @@ summary(glm)
 exp(coef(glm))
 
 ```
-The model provides the following interpretations:
+## Results
 
- - Intercept: On a normal operation day and during normal operation hours, the average number of delayed observations is 28.
+The model provides the following results:
 
- - Changing the operation to "Low Operation" (while keeping all other factors constant) results in an average of 28 * 0.2 ≈ 6 delayed observations.
+ - Intercept: On a normal operation day and during normal operation hours, the average number of delayed observations is 28 per hour.
 
- - Changing the operation to "Rush Hour" (while keeping all other factors constant) results in an average of 28 * 1.5 = 42 delayed observations.
+ - Changing the operation to "Low Operation" (while keeping all other factors constant) results in an average of 28 * 0.2 ≈ 6 delayed observations per hour.
 
- - Changing the event to "Extreme Days" (while keeping all other factors constant) results in an average of 28 * 1.6 = 45 delayed observations.
+ - Changing the operation to "Rush Hour" (while keeping all other factors constant) results in an average of 28 * 1.5 = 42 delayed observations per hour.
 
- - Changing the event to "Meiringen Reopened" (while keeping all other factors constant) results in an average of 28 * 0.45 = 14 delayed observations.
+ - Changing the event to "Extreme Days" (while keeping all other factors constant) results in an average of 28 * 1.6 = 45 delayed observations per hour.
+
+ - Changing the event to "Meiringen Reopened" (while keeping all other factors constant) results in an average of 28 * 0.45 = 14 delayed observations per hour.
 
 
+## Conclusion
+
+The model allows for predicting the expected number of delayed trains per hour across different event and operational categories.
+However, it's important to keep in mind that the number of delayed trains per category is correlated with the total number of trains operating during that category. Naturally, the more trains are in operation, the higher the likelihood of delays.
 
 
