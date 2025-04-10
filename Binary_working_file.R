@@ -181,7 +181,7 @@ On the other end of the spectrum, the S41 line shows the lowest delay rate, with
 and LINIEN_TEXT (train line) as the predictor. This model estimates how the probability of delay varies across different train lines.
 "
 
-glm_delay <- glm(Train_Delayed ~ LINIEN_TEXT, family = "binomial", data = zb_final_binominal)
+glm_delay <- glm(ANKUNFTDELAY_min ~ LINIEN_TEXT, family = "binomial", data = zb_final_binominal)
 
 summary(glm_delay)
 

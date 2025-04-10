@@ -16,6 +16,8 @@ This allows for a more reliable interpretation of the relationship between weath
 
 zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
 
+View(zb_final)
+
 str(zb_final)
 
 ## Subset the data
@@ -64,7 +66,7 @@ View(zb_final_subset)
 par(mfrow = c(1, 2))
 
 
-hist(zb_final_subset$ANKUNFTDELAY_min, main = "Histogram of ANKUNFTDELAY_min", xlab = "ANKUNFTDELAY_min", col = "lightblue", breaks = 10, xlim = c(-2,8))
+hist(zb_final$ANKUNFTDELAY_min, main = "Histogram of ANKUNFTDELAY_min", xlab = "ANKUNFTDELAY_min", col = "lightblue", breaks = 10, xlim = c(-2,8))
 
 
 hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", xlab = "ABFAHRTDELAY_min", col = "lightblue", xlim = c(-2,8))
@@ -73,8 +75,8 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 "
 
 
-qqnorm(zb_final_subset$ANKUNFTDELAY_min, main = "QQ Plot of ANKUNFTDELAY_min")
-qqline(zb_final_subset$ANKUNFTDELAY_min, col = "red")
+qqnorm(zb_final$ANKUNFTDELAY_min, main = "QQ Plot of ANKUNFTDELAY_min")
+qqline(zb_final$ANKUNFTDELAY_min, col = "red")
 
 qqnorm(zb_final_subset$ABFAHRTDELAY_min, main = "QQ Plot of ABFAHRTDELAY_min")
 qqline(zb_final_subset$ABFAHRTDELAY_min, col = "red")
