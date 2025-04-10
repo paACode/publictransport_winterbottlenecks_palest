@@ -181,7 +181,7 @@ On the other end of the spectrum, the S41 line shows the lowest delay rate, with
 and LINIEN_TEXT (train line) as the predictor. This model estimates how the probability of delay varies across different train lines.
 "
 
-glm_delay <- glm(ANKUNFTDELAY_min ~ LINIEN_TEXT, family = "binomial", data = zb_final_binominal)
+glm_delay <- glm(Train_Delayed ~ LINIEN_TEXT, family = "binomial", data = zb_final_binominal)
 
 summary(glm_delay)
 
@@ -201,19 +201,43 @@ boxplot(ANKUNFTDELAY_min ~ LINIEN_TEXT , data = zb_final_binominal)
 "In the boxplot, we can see that the R71 has a relatively large variance between the 25th and 75th percentiles of the data. 
 Nevertheless, R71 has fewer outliers compared to the other lines. The delays on R71 might be consistent, but not extreme 
 enough to be detected as a significant predictor in the logistic regression model.
-Just because R71 has a relatively high average delay doesn't necessarily mean that the line itself significantly affects the likelihood of delays 
+Just because R71 has a relatively high average of being delay doesn't necessarily mean that the line itself significantly affects the likelihood of delays 
 when considering all other factors. The logistic regression model is trying to predict the probability of a delay (yes/no) based on various predictors. 
-Other variables—such as weather, time of day, or operational factors—might influence whether a delay occurs for R71 trains.e logistic regression model is trying to predict 
-the probability of delay (yes/no) based on various predictors. Other variables (like weather, time of day, or other train line-related factors) might influence whether a delay occurs for R71 trains. 
+Other variables—such as weather, time of day, or operational factors—might influence whether a delay occurs for R71 trains.
 "
 
+"The next step in our analysis involves simulating predictions based on the logistic regression model to better understand the likelihood of train delays. 
+This will help us evaluate the model's performance and gain insights into the probability of delays across different train lines.
+"
 
-#############################
+# Set seed for reproducibility
+set.seed(123)
 
-ggplot(data = zb_final_binominal, mapping = aes(x = LINIEN_TEXT, y = predicted_prob)) + 
-  geom_point(alpha = 0.4, color = "darkblue") + 
-  labs(title = "Predicted Probability of Train Delay by Train Line", 
-       x = "Train Line", 
-       y = "Predicted Probability of Delay") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Simulate new data based on existing data's structure (e.g., random values for LINIEN_TEXT)
+simulated_data <- data.frame(
+  LINIEN_TEXT = sample(levels(zb_final_binominal$LINIEN_TEXT), 100, replace = TRUE)
+)
+
+# Predict the probability of delay for these simulated data points
+simulated_data$predicted_prob <- predict(glm_delay, newdata = simulated_data, type = "response")
+
+# Show the first few rows of the simulated data
+head(simulated_data)
+
+
+# Plotting the simulated probabilities of train delays by train line
+
+ggplot(simulated_data, aes(x = reorder(LINIEN_TEXT, predicted_prob), y = predicted_prob, color = LINIEN_TEXT)) +
+  geom_jitter(alpha = 0.5, width = 0.2, height = 0) +
+  labs(x = "Train Line", y = "Simulated Probability of Delay") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1), # Rotate x-axis labels
+    panel.border = element_blank(), # Remove the box around the plot
+    legend.position = "none" # Remove the legend
+  )
+
+
+"In the plot we see that the simulated data from our model are very similar to our original data. The EXT line has a simulated probablity delay of 40%. R71 has a simulated probability delay of roughly 24%. The train line with the lowest probability for delay is the S41."
+
 
