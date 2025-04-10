@@ -70,54 +70,7 @@ if (file.exists("zentrahlbahn_nov_dataset.csv")){
 raw_data <-  read.csv(file = "zentrahlbahn_nov_dataset_raw.csv", sep =",", head=TRUE )
 str(raw_data)
 ```
-To simplify calculations, the data types were manually set, as the raw dataset treats all data as characters.
 
-```{r Define Datatypes}
-library(dplyr)
-data.dtypes <- raw_data %>%
-  mutate(
-    BETRIEBSTAG= as.Date(BETRIEBSTAG, format = "%d.%m.%Y"),
-    FAHRT_BEZEICHNER = FAHRT_BEZEICHNER, # ???
-    BETREIBER_ID = BETREIBER_ID, # ???
-    BETREIBER_ABK = as.factor(BETREIBER_ABK), 
-    BETREIBER_NAME = as.factor(BETREIBER_NAME), # ZVV, ZVA, etc
-    PRODUKT_ID = as.factor(PRODUKT_ID),  # Zug , Bus etc
-    LINIEN_ID = LINIEN_ID, # ???
-    LINIEN_TEXT = as.factor(LINIEN_TEXT), # S26, IR16 etc
-    UMLAUF_ID = UMLAUF_ID, # ???
-    VERKEHRSMITTEL_TEXT = as.factor(VERKEHRSMITTEL_TEXT),
-    ZUSATZFAHRT_TF = as.logical(ZUSATZFAHRT_TF), 
-    FAELLT_AUS_TF = as.logical(FAELLT_AUS_TF),
-    BPUIC = BPUIC, # ???
-    HALTESTELLEN_NAME = as.factor(HALTESTELLEN_NAME),
-    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT, format = "%d.%m.%Y %H:%M" ),
-    AN_PROGNOSE = as.POSIXct(AN_PROGNOSE, format = "%d.%m.%Y %H:%M:%S"),
-    AN_PROGNOSE_STATUS = as.factor(AN_PROGNOSE_STATUS),
-    ABFAHRTSZEIT = as.POSIXct(ABFAHRTSZEIT, format = "%d.%m.%Y %H:%M" ),
-    AB_PROGNOSE = as.POSIXct(AN_PROGNOSE,  format = "%d.%m.%Y %H:%M:%S"),
-    AB_PROGNOSE_STATUS = as.factor(AB_PROGNOSE_STATUS), 
-    DURCHFAHRT_TF = as.logical(DURCHFAHRT_TF)
-    
-  )
-
-str(data.dtypes)
-```
-
-```{r  Remove Factors with only one level}
-# See current state
-factor_levels <- sapply(data.dtypes, function(x) if(is.factor(x)) levels(x) else NULL)
-# Print the factor levels
-factor_levels
-
-#Remove Factors with only one level --> "ZB, "ZENTRAHLBAHN" , "ZUG"
-data.dtypes <- data.dtypes[, sapply(data.dtypes, function(x) !(is.factor(x) && length(levels(x)) == 1))]
-
-#Double Check
-factor_levels <- sapply(data.dtypes, function(x) if(is.factor(x)) levels(x) else NULL)
-# Print the factor levels
-factor_levels
-
-```
 In oder to improve readablity, it was decided to add delays in minutes, beside in seconds. Further, the regarding columns are enhanved by units which do not effect the value type while supporting readability.
 ```{r  Add Delay and create dataset}
 data.delay <- data.dtypes %>% 
@@ -308,6 +261,46 @@ print(data.main)
 
 
 
+```
+
+```{r Select Columns needed}
+data.main <- data.main %>% 
+select(BETRIEBSTAG, LINIEN_ID, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ANKUNFTDELAY_sec, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_sec, FAELLT_AUS_TF, Delay_Category,TAGESZEIT,RUSH_HOUR,w_precip_mm_Luzern, w_temp_min_c_Luzern, w_temp_avg_c_Luzern,)
+```
+
+
+
+To simplify calculations, the data types were manually set, as the raw dataset treats all data as characters.
+
+```{r Define Datatypes}
+library(dplyr)
+data.dtypes <- data.main %>%
+  mutate(
+    BETRIEBSTAG= as.Date(BETRIEBSTAG, format = "%d.%m.%Y"),
+    LINIEN_ID = LINIEN_ID, # ???
+    HALTESTELLEN_NAME = as.factor(HALTESTELLEN_NAME),
+    ANKUNFTSZEIT = as.POSIXct(ANKUNFTSZEIT, format = "%d.%m.%Y %H:%M" ),
+    AN_PROGNOSE = as.POSIXct(AN_PROGNOSE, format = "%d.%m.%Y %H:%M:%S"),
+    ANKUNFTDELAY_sec = as.integer(ANKUNFTDELAY_sec),
+    ABFAHRTSZEIT = as.POSIXct(ABFAHRTSZEIT, format = "%d.%m.%Y %H:%M" ),
+    AB_PROGNOSE = as.POSIXct(AN_PROGNOSE,  format = "%d.%m.%Y %H:%M:%S"),
+    ABFAHRTDELAY_sec = as.integer(ABFAHRTDELAY_sec), 
+    FAELLT_AUS_TF = as.logical(FAELLT_AUS_TF),
+    Delay_Category = as.factor(Delay_Category),
+    TAGESZEIT = as.factor(TAGESZEIT),
+    RUSH_HOUR = as.factor(RUSH_HOUR),
+    w_precip_mm_Engelberg = as.numeric(w_precip_mm_Luzern),
+    w_temp_min_c_Luzern = as.numeric(w_temp_min_c_Luzern),
+    w_temp_avg_c_Luzern = as.numeric(w_temp_avg_c_Luzern),
+    
+  )
+
+str(data.dtypes)
+```
+
+
+```{r Export as  file}
+save(data.dtypes, file = "zentrahlbahn_final.rda")
 ```
 
 ```{r write final file}
