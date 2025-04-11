@@ -187,7 +187,7 @@ summary(glm_delay)
 "The number of Fisher Scoring iterations is 7, which is an acceptable value.
 On one hand, the p-values for almost all the train lines are very small, indicating that the train lines have a statistically significant 
 effect on whether a train is delayed or not. Since the coefficients for the train lines are negative, it suggests that the different train lines have a 
-lower probability of being delayed compared to the baseline train line.
+lower likeliness of being delayed compared to the baseline train line.
 On the other hand, the train line R71, which operates between Meiringen and Innertkirchen, has a p-value above 0.05. This suggests that R71 does not have 
 a statistically significant impact on whether a train is delayed or not. This is interesting because, when the predictors were plotted, R71 was the line with 
 the second-highest probability of delay, with an average delay of around 24%.
@@ -241,14 +241,10 @@ ggplot(simulated_data, aes(x = reorder(LINIEN_TEXT, predicted_prob), y = predict
 while the R71 line has a simulated probability delay of around 24%. 
 On the other end, the S41 line exhibits the lowest simulated probability of delay, with only about 1% of its services experiencing delays."
 
-#################################
+"Lets now compare our simulated data with our real dataset"
 
 # Discretize the simulated data
 simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.03, 1, 0) 
-
-# Now, you need to match the simulated data to the real data. To do this,
-# you could create a random selection of simulated data matching the size of the real data.
-# Here, we assume your real dataset has the same number of rows as simulated_data (10000 rows).
 
 # Sample from the simulated data with replacement to match the number of rows in the real dataset
 set.seed(123)
@@ -271,6 +267,4 @@ Sensitivity, which measures the model's ability to correctly identify delayed tr
 Despite the high precision for delay predictions, the model’s inability to accurately identify non-delayed trains is a key limitation. This is partly due to the threshold chosen for classification, which may need adjustment to balance the trade-off between sensitivity and specificity. Different thresholds were tried with no real improvement in the confusion matrix. The high prevalence of non-delayed trains also skews the accuracy, making it less reflective of the model's ability to handle delays effectively.
 For the next steps, further adjustments might have to be done regarding class imbalance, or a deeper look at the allocation of a better threshold should be considered.
 "
-
-
 
