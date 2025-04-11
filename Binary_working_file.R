@@ -4,6 +4,7 @@
 library(dplyr)
 library(ggplot2)
 library(mgcv)
+library(caret)
 
 
 zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
@@ -51,6 +52,9 @@ zb_final_binominal <- zb_final_binominal %>%
   filter(!is.na(ABFAHRTDELAY_min))
 
 sum(is.na(zb_final_binominal$ABFAHRTDELAY_min)) #Checking if ABFAHRTDELAY_min NA is 0
+
+# Convert the Train_Delayed to numeric (0 = FALSE, 1 = TRUE) otherwise we can not use it with a logistic regression model
+zb_final_binominal$Train_Delayed <- as.numeric(zb_final_binominal$Train_Delayed)
 
 
 str(zb_final_binominal)
@@ -156,11 +160,6 @@ To improve model performance, especially in predicting rush hour trains (positiv
 
 #Models Binary delay
 
-# Convert the Train_Delayed to numeric (0 = FALSE, 1 = TRUE) otherwise we can not use it with a logistic regression model
-zb_final_binominal$Train_Delayed <- as.numeric(zb_final_binominal$Train_Delayed)
-
-str(zb_final_binominal)
-
 
 #Plotting the data
 
@@ -215,7 +214,7 @@ set.seed(123)
 
 # Simulate new data based on existing data's structure (e.g., random values for LINIEN_TEXT)
 simulated_data <- data.frame(
-  LINIEN_TEXT = sample(levels(zb_final_binominal$LINIEN_TEXT), 100, replace = TRUE)
+  LINIEN_TEXT = sample(levels(zb_final_binominal$LINIEN_TEXT), 10000, replace = TRUE) #increased the n of trials in order to have higher sampling and higher probability range
 )
 
 # Predict the probability of delay for these simulated data points
@@ -238,6 +237,40 @@ ggplot(simulated_data, aes(x = reorder(LINIEN_TEXT, predicted_prob), y = predict
   )
 
 
-"In the plot we see that the simulated data from our model are very similar to our original data. The EXT line has a simulated probablity delay of 40%. R71 has a simulated probability delay of roughly 24%. The train line with the lowest probability for delay is the S41."
+"In this plot, we can see that the simulated data is similar to the original data. The EXT line shows a simulated probability of delay of approximately 40%, 
+while the R71 line has a simulated probability delay of around 24%. 
+On the other end, the S41 line exhibits the lowest simulated probability of delay, with only about 1% of its services experiencing delays."
+
+#################################
+
+# Discretize the simulated data
+simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.03, 1, 0) 
+
+# Now, you need to match the simulated data to the real data. To do this,
+# you could create a random selection of simulated data matching the size of the real data.
+# Here, we assume your real dataset has the same number of rows as simulated_data (10000 rows).
+
+# Sample from the simulated data with replacement to match the number of rows in the real dataset
+set.seed(123)
+simulated_sample <- simulated_data[sample(1:nrow(simulated_data), nrow(zb_final_binominal), replace = TRUE), ]
+
+# Create the confusion matrix
+# Make sure the factor levels are the same for both the simulated data and the real data
+simulated_sample$simulated_delay <- factor(simulated_sample$simulated_delay, levels = c(0, 1))
+zb_final_binominal$Train_Delayed <- factor(zb_final_binominal$Train_Delayed, levels = c(0, 1))
+
+
+# Compare the real data delays with the simulated delays
+conf_matrix <- confusionMatrix(as.factor(simulated_sample$simulated_delay), as.factor(zb_final_binominal$Train_Delayed))
+
+# Print the confusion matrix
+print(conf_matrix)
+
+"The model's accuracy is 78.3%, which indicates it performs well overall, but this metric is skewed due to the significant imbalance between delayed and non-delayed trains in the dataset. Given the high punctuality of Swiss trains, non-delayed trains constitute the overwhelming majority of the data. This imbalance makes the model's overall accuracy less informative, as it reflects the model's ability to predict non-delayed trains more accurately than delayed ones.
+Sensitivity, which measures the model's ability to correctly identify delayed trains, is relatively high at 81.2%. This suggests that the model does capture most of the actual delays. However, specificity is low at 19.3%, meaning the model struggles to correctly identify instances of no delay, frequently misclassifying non-delayed trains as delayed. Precision is 95.3%, showing that when the model predicts a delay, it is usually correct. However, the model's low negative predictive value (NPV) of 4.9% highlights that it is not very accurate when predicting no delay, often incorrectly predicting delays for non-delayed trains. The balanced accuracy, which accounts for both sensitivity and specificity, is 50.3%, indicating the model's overall ability to correctly classify both delays and no delays is not much better than random guessing.
+Despite the high precision for delay predictions, the model’s inability to accurately identify non-delayed trains is a key limitation. This is partly due to the threshold chosen for classification, which may need adjustment to balance the trade-off between sensitivity and specificity. Different thresholds were tried with no real improvement in the confusion matrix. The high prevalence of non-delayed trains also skews the accuracy, making it less reflective of the model's ability to handle delays effectively.
+For the next steps, further adjustments might have to be done regarding class imbalance, or a deeper look at the allocation of a better threshold should be considered.
+"
+
 
 
