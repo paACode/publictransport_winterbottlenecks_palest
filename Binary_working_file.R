@@ -209,11 +209,12 @@ Other variables—such as weather, time of day, or operational factors—might i
 
 exp(coef(glm_delay)) %>% round(digits=2)
 
-"To interpret the effect of different train lines on the likelihood of delays, the logistic regression coefficients were exponentiated to obtain odds ratios. 
-These odds ratios provide a clearer understanding of how the odds of a delay on each line compare to the baseline category, which in this model is the train line EXT. 
-All other train lines show odds ratios significantly below 1, indicating a lower likelihood of delay relative to EXT. For instance, trains on line IR have odds of being delayed that are only 9% of those on line EXT, 
-while line S41 shows an even stronger reduction, with odds at just 1%. Other notable examples include lines PE and R70, each with odds around 7–9% of the baseline, and line S5, with only 5% of the odds of a delay compared to EXT. 
-These findings suggest, as already seen in the previous plots, that line EXT has a particularly high likelihood of delays, while other lines operate with considerably greater punctuality."
+"The exponentiated coefficients of the logistic regression model allow us to interpret the odds ratios for each train line relative to the reference line EXT. For instance, a coefficient of 0.09 for the IR line means 
+that trains on the IR line are associated with 91% fewer delays compared to trains on the EXT line. This means that trains on the IR line are significantly less likely to be delayed than those on the EXT line.
+Similarly, the PE line, with a coefficient of 0.07, indicates that trains on this line are associated with 93% fewer delays compared to the EXT line, further reinforcing that these lines are less prone to delays. 
+Conversely, for the R71 line, with an odds ratio of 0.46, we can interpret this as the R71 line having 54% fewer delays compared to the EXT line, though still less pronounced compared to other lines like IR and PE.
+These findings suggest, as already seen in the previous plots, that line EXT has a particularly high likelihood of delays, while other lines operate with considerably greater punctuality.
+"
 
 
 "The next step in our analysis involves simulating predictions based on the logistic regression model to better understand the likelihood of train delays. 
