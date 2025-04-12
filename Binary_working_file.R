@@ -243,28 +243,42 @@ On the other end, the S41 line exhibits the lowest simulated probability of dela
 
 "Lets now compare our simulated data with our real dataset"
 
+summary(simulated_data)
+
+"The mean of the simulated data is 0.105. This is the reason why we cannot take a threshold of 0.5. This would result in nearly all cases being classified as non-delayed, since very few predicted probabilities exceed 0.5—ultimately leading to extremely poor sensitivity and almost no true positives.
+Several thresholds were tested to determine the optimal cut-off point for classifying delays based on the predicted probabilities. Thresholds such as 0.03, 0.08, and 0.1 were evaluated, but they either led to a very low specificity or poor sensitivity. A threshold of 0.2 appeared to offer the most reasonable trade-off between correctly identifying delayed trains (sensitivity) and avoiding false delay predictions (specificity), making it the most balanced choice for this model.
+"
+
 # Discretize the simulated data
-simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.03, 1, 0) 
+simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.2, 1, 0) 
 
 # Sample from the simulated data with replacement to match the number of rows in the real dataset
 set.seed(123)
 simulated_sample <- simulated_data[sample(1:nrow(simulated_data), nrow(zb_final_binominal), replace = TRUE), ]
 
 # Create the confusion matrix
-# Make sure the factor levels are the same for both the simulated data and the real data
+# Making sure the factor levels are the same for both the simulated data and the real data
 simulated_sample$simulated_delay <- factor(simulated_sample$simulated_delay, levels = c(0, 1))
 zb_final_binominal$Train_Delayed <- factor(zb_final_binominal$Train_Delayed, levels = c(0, 1))
 
 
-# Compare the real data delays with the simulated delays
+# Comparing the real data delays with the simulated delays
 conf_matrix <- confusionMatrix(as.factor(simulated_sample$simulated_delay), as.factor(zb_final_binominal$Train_Delayed))
 
-# Print the confusion matrix
+# Printing the confusion matrix
 print(conf_matrix)
 
-"The model's accuracy is 78.3%, which indicates it performs well overall, but this metric is skewed due to the significant imbalance between delayed and non-delayed trains in the dataset. Given the high punctuality of Swiss trains, non-delayed trains constitute the overwhelming majority of the data. This imbalance makes the model's overall accuracy less informative, as it reflects the model's ability to predict non-delayed trains more accurately than delayed ones.
-Sensitivity, which measures the model's ability to correctly identify delayed trains, is relatively high at 81.2%. This suggests that the model does capture most of the actual delays. However, specificity is low at 19.3%, meaning the model struggles to correctly identify instances of no delay, frequently misclassifying non-delayed trains as delayed. Precision is 95.3%, showing that when the model predicts a delay, it is usually correct. However, the model's low negative predictive value (NPV) of 4.9% highlights that it is not very accurate when predicting no delay, often incorrectly predicting delays for non-delayed trains. The balanced accuracy, which accounts for both sensitivity and specificity, is 50.3%, indicating the model's overall ability to correctly classify both delays and no delays is not much better than random guessing.
-Despite the high precision for delay predictions, the model’s inability to accurately identify non-delayed trains is a key limitation. This is partly due to the threshold chosen for classification, which may need adjustment to balance the trade-off between sensitivity and specificity. Different thresholds were tried with no real improvement in the confusion matrix. The high prevalence of non-delayed trains also skews the accuracy, making it less reflective of the model's ability to handle delays effectively.
-For the next steps, further adjustments might have to be done regarding class imbalance, or a deeper look at the allocation of a better threshold should be considered.
-"
+"The model's accuracy is 76.96%, which at first glance suggests decent performance, but this metric is heavily influenced by
+the significant imbalance between delayed and non-delayed trains in the dataset. Due to the high punctuality of Swiss trains, 
+the vast majority of observations are non-delays, making accuracy a somewhat misleading indicator of model effectiveness. 
+Sensitivity, which captures how well the model identifies actual delays, is fairly high at 79.8%, indicating that the model 
+detects most delay cases. However, specificity is low at 20.0%, meaning it struggles to correctly identify non-delayed trains, 
+frequently labeling them as delayed. The model's precision is high at 95.2%, so when it predicts a delay, it is usually right. 
+On the other hand, the negative predictive value is low at 4.7%, reflecting poor performance in correctly predicting trains that are on time. 
+Balanced accuracy, which considers both sensitivity and specificity, is 49.9%, ..suggesting the model performs no better than random guessing 
+when it comes to balancing delay and non-delay predictions.
+Despite strong precision for delays, the inability to reliably detect non-delays remains a key weakness. Several threshold values were tested to improve this balance, 
+but none led to a meaningful improvement in the confusion matrix. A threshold of 0.2 offered the best compromise between sensitivity and specificity among the tested options. 
+For future work, further adjustments addressing the class imbalance and a more refined threshold selection process may be necessary to enhance model reliability across both outcome classes."
+
 
