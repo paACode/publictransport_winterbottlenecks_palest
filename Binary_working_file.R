@@ -205,6 +205,17 @@ when considering all other factors. The logistic regression model is trying to p
 Other variables—such as weather, time of day, or operational factors—might influence whether a delay occurs for R71 trains.
 "
 
+"Lets have now a look at the coefficients of glm_delay"
+
+exp(coef(glm_delay)) %>% round(digits=2)
+
+"To interpret the effect of different train lines on the likelihood of delays, the logistic regression coefficients were exponentiated to obtain odds ratios. 
+These odds ratios provide a clearer understanding of how the odds of a delay on each line compare to the baseline category, which in this model is the train line EXT. 
+All other train lines show odds ratios significantly below 1, indicating a lower likelihood of delay relative to EXT. For instance, trains on line IR have odds of being delayed that are only 9% of those on line EXT, 
+while line S41 shows an even stronger reduction, with odds at just 1%. Other notable examples include lines PE and R70, each with odds around 7–9% of the baseline, and line S5, with only 5% of the odds of a delay compared to EXT. 
+These findings suggest, as already seen in the previous plots, that line EXT has a particularly high likelihood of delays, while other lines operate with considerably greater punctuality."
+
+
 "The next step in our analysis involves simulating predictions based on the logistic regression model to better understand the likelihood of train delays. 
 This will help us evaluate the model's performance and gain insights into the probability of delays across different train lines.
 "
