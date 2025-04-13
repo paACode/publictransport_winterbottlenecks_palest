@@ -45,7 +45,6 @@ sum(is.na(zb_final_subset$ABFAHRTDELAY_min)) #Checking if ABFAHRTDELAY_min NA is
 
 zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_avg_c_Luzern)
 
-
 str(zb_final_subset)
 
 View(zb_final_subset)
@@ -64,7 +63,6 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 
 "We see that both response variables are not normally distrubuted. They seem to be right skewed. Lets check with the QQ plots. 
 "
-
 
 qqnorm(zb_final$ANKUNFTDELAY_min, main = "QQ Plot of ANKUNFTDELAY_min")
 qqline(zb_final$ANKUNFTDELAY_min, col = "lightblue")
@@ -117,9 +115,9 @@ The effect of time of day is substantial; compared to the evening, trains during
 Regarding train lines, the IR line shows a reduction of 0.22 minutes compared to EXT, although this difference is not statistically significant (p = 0.5). In contrast, the PE line exhibits the largest reduction, with trains experiencing on average 2.32 minutes less delay than EXT, a difference that is statistically significant. Likewise, the S4, S41, S44, and S55 lines show significantly reduced delays compared to EXT, with reductions of 0.84, 1.35, 1.04, and 1.96 minutes, respectively, while the S5 line’s difference (0.51 minutes less) is not statistically significant.
 
 Interpretation of the Smooth Terms
-The smooth term for average temperature has an estimated effective degrees of freedom (edf) of approximately 9, indicating a moderately complex non-linear relationship with departure delay. The corresponding plot reveals that temperatures between 0 and 6°C have a stronger effect on departure delay, whereas between roughly 6–7°C and 8–10°C the effect is minimal. 
+The smooth term for average temperature has an estimated effective degrees of freedom (edf) of approximately 9, indicating a moderately complex non-linear relationship with departure delay. We have strong evidence that it is not 0 with a p-value < 0.05. The corresponding plot reveals that temperatures between 0 and 6°C have a stronger effect on departure delay, whereas between roughly 6–7°C and 8–10°C the effect is minimal. 
 
-Similarly, the smooth term for average precipitation (w_precip_mm_Luzern) has an edf of about 8.32, suggesting a moderately complex non-linear relationship. The precipitation plot indicates a strong impact on departure delay at lower precipitation levels (up to around 20 mm), with a relatively flat effect observed between approximately 22 and 50 mm, implying that beyond a certain threshold, additional precipitation has little extra effect on delays.
+Similarly, the smooth term for average precipitation (w_precip_mm_Luzern) has an edf of about 8.32, suggesting a moderately complex non-linear relationship. We have strong evidence that it is not 0 with a p-value < 0.05. The precipitation plot indicates a strong impact on departure delay at lower precipitation levels (up to around 20 mm), with a relatively flat effect observed between approximately 22 and 50 mm, implying that beyond a certain threshold, additional precipitation has little extra effect on delays.
 
 Overall Model Performance
 The adjusted R² value of 0.119 means that the model explains around 11.9% of the variation in departure delays. This suggests that the predictors included in the model have a measurable effect on delays, but a large part of the variation (around 88%) is still not accounted for. This can be considered as not unusual in real-world transportation data, where many factors that influence delays—such as technical problems, temporary disruptions, staffing issues or operational decisions—are not included in the dataset. While the model successfully identifies several statistically significant predictors, it also shows that more variables or more complex modeling approaches might be needed to better capture all the factors that contribute to departure delays.
