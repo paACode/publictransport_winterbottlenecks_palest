@@ -19,7 +19,7 @@ zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors =
 
 ## Subset the data
 
-# Define the specific Haltestellen
+# Define the specific Haltestellen in the region of Lucerne
 haltestellen_to_keep <- c("Luzern", "Luzern Allmend/Messe", "Kriens Mattenhof", "Horw", 
                           "Hergiswil Matt", "Hergiswil NW", "Stansstad", "Stans")
 
@@ -43,7 +43,7 @@ sum(is.na(zb_final_subset$ABFAHRTDELAY_min)) #Checking if ABFAHRTDELAY_min NA is
 
 #Reducing the subbset just with the relevant columns
 
-zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_max_c_Luzern, STUNDE_ANKUNFT)
+zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_avg_c_Luzern)
 
 
 str(zb_final_subset)
@@ -51,8 +51,7 @@ str(zb_final_subset)
 View(zb_final_subset)
 
 
-
-"R assumes for GAM models usually the gaussian family for the response variables.Therefore, lets have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are gaussian distributed. 
+"R assumes for GAM models usually the gaussian family for the response variables. Therefore, lets have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are gaussian distributed. 
 "
 
 par(mfrow = c(1, 2))
@@ -91,4 +90,19 @@ hist(zb_final_subset$ANKUNFTDELAY_min, main = "Histogram of ANKUNFTDELAY_min", x
 
 hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", xlab = "ABFAHRTDELAY_min", col = "lightgreen", breaks = 50, xlim = c(-2,4))
 
-"The histogram seems to be normally distributed now."
+"The histogram indicates an approximately normal distribution. Therefore, the dataset is now suitable for fitting with Generalized Additive Models (GAMs).
+"
+
+
+gam_Ankunft_temp <- gam(ANKUNFTDELAY_min ~ s(w_temp_avg_c_Luzern), data = zb_final_subset) 
+
+summary (gam_Ankunft_temp)
+
+"The p-value associated with the smooth term is close to zero, providing strong evidence that the average temperature in Lucerne has a statistically significant effect on arrival delays. The estimated effective degrees of freedom (edf ≈ 9) suggest a moderately complex, non-linear relationship. However, the adjusted R-squared value of 0.036 and the explained deviance of only 3.67% indicate that the model captures only a small portion of the variation in arrival delays. Thus, while the effect is significant, temperature alone does not explain much of the delay variability.
+"
+
+
+
+
+
+
