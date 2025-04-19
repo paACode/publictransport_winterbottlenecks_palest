@@ -265,9 +265,11 @@ summary(simulated_data)
 "The mean of the simulated data is 0.105. This is the reason why we cannot take a threshold of 0.5. This would result in nearly all cases being classified as non-delayed, since very few predicted probabilities exceed 0.5—ultimately leading to extremely poor sensitivity and almost no true positives.
 Several thresholds were tested to determine the optimal cut-off point for classifying delays based on the predicted probabilities. Thresholds such as 0.03, 0.08, and 0.1 were evaluated, but they either led to a very low specificity or poor sensitivity. A threshold of 0.2 appeared to offer the most reasonable trade-off between correctly identifying delayed trains (sensitivity) and avoiding false delay predictions (specificity), making it the most balanced choice for this model.
 "
+#  Mean of the Binary Simulated Delay Outcome
+mean(as.numeric(as.character(simulated_data$simulated_delay)))
 
 # Discretize the simulated data
-simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.2, 1, 0) 
+simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.2, 1, 0) # a threshold of 0.2 was chosen based on the mean the binary simulated delay outcome.
 
 # Sample from the simulated data with replacement to match the number of rows in the real dataset
 set.seed(123)
@@ -292,10 +294,12 @@ Sensitivity, which captures how well the model identifies actual delays, is fair
 detects most delay cases. However, specificity is low at 20.0%, meaning it struggles to correctly identify non-delayed trains, 
 frequently labeling them as delayed. The model's precision is high at 95.2%, so when it predicts a delay, it is usually right. 
 On the other hand, the negative predictive value is low at 4.7%, reflecting poor performance in correctly predicting trains that are on time. 
-Balanced accuracy, which considers both sensitivity and specificity, is 49.9%, ..suggesting the model performs no better than random guessing 
+Balanced accuracy, which considers both sensitivity and specificity, is 49.9% suggesting the model performs no better than random guessing 
 when it comes to balancing delay and non-delay predictions.
 Despite strong precision for delays, the inability to reliably detect non-delays remains a key weakness. Several threshold values were tested to improve this balance, 
 but none led to a meaningful improvement in the confusion matrix. A threshold of 0.2 offered the best compromise between sensitivity and specificity among the tested options. 
 For future work, further adjustments addressing the class imbalance and a more refined threshold selection process may be necessary to enhance model reliability across both outcome classes."
+
+
 
 
