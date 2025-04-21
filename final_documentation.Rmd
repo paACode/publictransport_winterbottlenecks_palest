@@ -69,6 +69,7 @@ library(dplyr)
 library(ggplot2)
 library(mgcv)
 library(tidyr)
+library(caret)
 
 
 #Creating subset
@@ -105,7 +106,7 @@ zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTE
 
 ```
 
-R assumes for GAM models usually the gaussian family for the response variables. Therefore, lets have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are gaussian distributed. 
+R assumes for GAM models usually the gaussian family for the response variables. Therefore, let's have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are gaussian distributed. 
 
 ```{r first-histogram, include=TRUE, echo=TRUE}
 
@@ -120,7 +121,7 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 
 ```
 
-We see that both response variables are not normally distrubuted. They seem to be right skewed. Lets check with the QQ plots. 
+We see that both response variables are not normally distributed They seem to be right skewed. Lets check with the QQ plots. 
 
 
 ```{r first-qqplot, include=TRUE, echo=TRUE}
@@ -210,8 +211,6 @@ The adjusted R² value of 0.119 means that the model explains around 11.9% of th
 
 zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
 
-str (zb_final)
-
 #Subset
 zb_final_binominal <- zb_final %>%
   mutate(
@@ -238,7 +237,7 @@ zb_final_binominal <- zb_final %>%
     (match("RUSH_HOUR", names(.)) + 1):ncol(.)  # Columns after RUSH_HOUR
   )
 
-#Reducing the subbset just with the relevant columns
+#Reducing the subset with only relevant columns
 zb_final_binominal <- zb_final_binominal %>% select(BETRIEBSTAG, LINIEN_TEXT, FAELLT_AUS_TF, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, AN_PROGNOSE_STATUS, ABFAHRTSZEIT, AB_PROGNOSE, AB_PROGNOSE_STATUS, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, Train_Delayed, TAGESZEIT, RUSH_HOUR, Train_RUSH_HOUR)
 
 
@@ -278,7 +277,7 @@ of its services experiencing delays. The line with the second highest delay rate
 On the other end of the spectrum, the S41 line shows the lowest delay rate, with only about 10% of its trains being delayed.
 "
 
-"To predict whether a train is delayed, we use a binomial logistic regression with Train_Delayed as the binary response variable 
+To predict whether a train is delayed, we use a binomial logistic regression with Train_Delayed as the binary response variable 
 and LINIEN_TEXT (train line) as the predictor. This model estimates how the probability of delay varies across different train lines.
 
 ```{r glm-delay, include=TRUE, echo=TRUE}
@@ -335,7 +334,7 @@ These findings suggest, as already seen in the previous plots, that line EXT has
 The next step in our analysis involves simulating predictions based on the logistic regression model to better understand the likelihood of train delays. 
 This will help us evaluate the model's performance and gain insights into the probability of delays across different train lines.
 
-```{simulation-glm-delay, include=TRUE, echo=TRUE}
+```{r simulation-glm-delay, include=TRUE, echo=TRUE}
 
 # Set seed for reproducibility
 set.seed(123)
@@ -382,11 +381,8 @@ Several thresholds were tested to determine the optimal cut-off point for classi
 
 
 ```{r confusion-matrix-simulated-data, include=TRUE, echo=TRUE}
-#  Mean of the Binary Simulated Delay Outcome
-mean(as.numeric(as.character(simulated_data$simulated_delay)))
-
 # Discretize the simulated data
-simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.2, 1, 0) # a threshold of 0.2 was chosen based on the mean the binary simulated delay outcome.
+simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.2, 1, 0)
 
 # Sample from the simulated data with replacement to match the number of rows in the real dataset
 set.seed(123)
@@ -417,8 +413,4 @@ when it comes to balancing delay and non-delay predictions.
 Despite strong precision for delays, the inability to reliably detect non-delays remains a key weakness. Several threshold values were tested to improve this balance, 
 but none led to a meaningful improvement in the confusion matrix. A threshold of 0.2 offered the best compromise between sensitivity and specificity among the tested options. 
 For future work, further adjustments addressing the class imbalance and a more refined threshold selection process may be necessary to enhance model reliability across both outcome classes.
-
-
-
-
 
