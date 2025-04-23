@@ -76,16 +76,19 @@ library(caret)
 
 zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
 
-## Subset the data
-
 # Define the specific Haltestellen in the region of Lucerne
 haltestellen_to_keep <- c("Luzern", "Luzern Allmend/Messe", "Kriens Mattenhof", "Horw", 
                           "Hergiswil Matt", "Hergiswil NW", "Stansstad", "Stans")
 
-# Subset the data
-
 zb_final_subset <- zb_final %>%
   filter(HALTESTELLEN_NAME %in% haltestellen_to_keep)
+
+# Create new columns with delay in minutes
+zb_final_subset <- zb_final_subset %>%
+  mutate(
+    ABFAHRTDELAY_min = ABFAHRTDELAY_sec / 60,
+    ANKUNFTDELAY_min = ANKUNFTDELAY_sec / 60
+  )
 
 
 #Removing rows NA in ANKUNFTDELAY_min and ABFAHRTDELAY_min
@@ -205,7 +208,7 @@ Overall Model Performance
 The adjusted R² value of 0.119 means that the model explains around 11.9% of the variation in departure delays. This suggests that the predictors included in the model have a measurable effect on delays, but a large part of the variation (around 88%) is still not accounted for. This can be considered as not unusual in real-world transportation data, where many factors that influence delays—such as technical problems, temporary disruptions, staffing issues or operational decisions—are not included in the dataset. While the model successfully identifies several statistically significant predictors, it also shows that more variables or more complex modeling approaches might be needed to better capture all the factors that contribute to departure delays.
 
 
-#Generalised Linear Model with family set to Binomial
+# Generalised Linear Model with family set to Binomial
 
 ```{r binary-codes-subset, include=TRUE, echo=TRUE}
 
@@ -235,6 +238,13 @@ zb_final_binominal <- zb_final %>%
     (match("Delay_Category", names(.)) + 1):(match("RUSH_HOUR", names(.))),  # Columns between Delay_Category and RUSH_HOUR
     Train_RUSH_HOUR,  # Add Train_RUSH_HOUR after RUSH_HOUR
     (match("RUSH_HOUR", names(.)) + 1):ncol(.)  # Columns after RUSH_HOUR
+  )
+
+# Create new columns with delay in minutes
+zb_final_binominal <- zb_final_binominal %>%
+  mutate(
+    ABFAHRTDELAY_min = ABFAHRTDELAY_sec / 60,
+    ANKUNFTDELAY_min = ANKUNFTDELAY_sec / 60
   )
 
 #Reducing the subset with only relevant columns
