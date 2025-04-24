@@ -61,8 +61,6 @@ A key subset of our predictors is related to weather conditions. However, becaus
 comparing weather-related predictors across all stations introduces variability that may obscure meaningful patterns. To address this, we restrict our analysis to a subset of stations located within the Lucerne region, where the climate is more uniform. 
 This allows for a more reliable interpretation of the relationship between weather conditions and train delays.
 
-
-
 ```{r gam-general-codes-subset, include=TRUE, echo=TRUE}
 # General codes
 library(dplyr)
@@ -126,7 +124,6 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 
 We see that both response variables are not normally distributed They seem to be right skewed. Lets check with the QQ plots. 
 
-
 ```{r first-qqplot, include=TRUE, echo=TRUE}
 
 par(mfrow = c(1, 2))
@@ -139,14 +136,10 @@ qqline(zb_final_subset$ABFAHRTDELAY_min, col = "lightblue")
 
 ```
 
-
-The QQ plots reveal that the response variables are right-skewed, which aligns with expectations. 
-In real-world train operations, early arrivals or departures are relatively uncommon compared to delays. 
-Moreover, the distribution indicates that longer delays occur less frequently than shorter ones, reflecting 
-typical delay patterns observed in Swiss public transportation. For this reason, we restrict our dataset for the 
+The QQ plots reveal that the response variables are right-skewed, which aligns with expectations. In real-world train operations, early arrivals or departures are relatively uncommon compared to delays. Moreover, the distribution indicates that longer delays occur less frequently than shorter ones, reflecting 
+typical delay patterns observed in Swiss public transportation.For this reason, we restrict our dataset for the 
 GAM analysis to observations with delays between -2 and +4 minutes, aiming to ensure a distribution that more closely 
 approximates the Gaussian assumption required by the model.
-
 
 ```{r second-histogram, include=TRUE, echo=TRUE}
 
@@ -167,7 +160,6 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 
 The histogram indicates an approximately normal distribution. Therefore, the dataset is now suitable for fitting with Generalized Additive Models (GAMs).
 
-
 ```{r gam-Ankunft-temp, include=TRUE, echo=TRUE}
 
 gam_Ankunft_temp <- gam(ANKUNFTDELAY_min ~ s(w_temp_avg_c_Luzern), data = zb_final_subset) 
@@ -177,7 +169,6 @@ summary (gam_Ankunft_temp)
 ```
 
 The p-value associated with the smooth term is close to zero, providing strong evidence that the average temperature in Lucerne has a statistically significant effect on arrival delays. The estimated effective degrees of freedom (edf ≈ 9) suggest a moderately complex, non-linear relationship. However, the adjusted R-squared value of 0.036 and the explained deviance of only 3.67% indicate that the model captures only a small portion of the variation in arrival delays. Thus, while the effect is significant, temperature alone does not explain much of the delay variability.
-
 
 ```{r gam-temp-precip-tageszeit-linien_text, include=TRUE, echo=TRUE}
 
@@ -189,24 +180,22 @@ plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 1,main = 
 plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 2, main = "Effect of Precipitation on Departure Delay")
 ```
 
-
-Interpretation of Parametric Coefficients
+Interpretation of Parametric Coefficients:
 The reference levels for the categorical predictors are evening for TAGESZEIT and EXT for LINIEN_TEXT. Under these baseline conditions (evening, 0°C, and 0 mm precipitation), the EXT line of Zentralbahn (ZB) in the Lucerne region has an average departure delay of approximately 1.25 minutes. 
 
 The effect of time of day is substantial; compared to the evening, trains during luncht time experience on average 0.30 minutes less delay, those in the afternoon 0.16 minutes less, during night operations 0.30 minutes less and in the morning 0.12 minutes less delay. 
 
 Regarding train lines, the IR line shows a reduction of 0.22 minutes compared to EXT, although this difference is not statistically significant (p = 0.5). In contrast, the PE line exhibits the largest reduction, with trains experiencing on average 2.32 minutes less delay than EXT, a difference that is statistically significant. Likewise, the S4, S41, S44, and S55 lines show significantly reduced delays compared to EXT, with reductions of 0.84, 1.35, 1.04, and 1.96 minutes, respectively, while the S5 line’s difference (0.51 minutes less) is not statistically significant.
 
-Interpretation of the Smooth Terms
+Interpretation of the Smooth Terms:
 The smooth term for average temperature has an estimated effective degrees of freedom (edf) of approximately 9, indicating a moderately complex non-linear relationship with departure delay. We have strong evidence that it is not 0 with a p-value < 0.05. The corresponding plot reveals that temperatures between 0 and 6°C have a stronger effect on departure delay, whereas between roughly 6–7°C and 8–10°C the effect is minimal. 
 
 Similarly, the smooth term for average precipitation (w_precip_mm_Luzern) has an edf of about 8.32, suggesting a moderately complex non-linear relationship. We have strong evidence that it is not 0 with a p-value < 0.05. 
 
 The precipitation plot shows a clear non-linear relationship between precipitation and departure delays. There is a strong effect at lower precipitation levels (up to approximately 20 mm), after which the curve flattens between around 22 mm and 50 mm, indicating a reduced impact on delays. One possible explanation for this flattening is that higher precipitation levels may coincide with times of reduced train activity—such as during the night—when fewer departures occur, thereby minimizing the observed effect on overall delays. Additionally, since the dataset only covers November 2024, it is possible that there were relatively few instances of heavy precipitation during this period in the Lucerne region, which may limit the model's ability to capture stronger effects at higher precipitation levels.
 
-Overall Model Performance
+Overall Model Performance:
 The adjusted R² value of 0.119 means that the model explains around 11.9% of the variation in departure delays. This suggests that the predictors included in the model have a measurable effect on delays, but a large part of the variation (around 88%) is still not accounted for. This can be considered as not unusual in real-world transportation data, where many factors that influence delays—such as technical problems, temporary disruptions, staffing issues or operational decisions—are not included in the dataset. While the model successfully identifies several statistically significant predictors, it also shows that more variables or more complex modeling approaches might be needed to better capture all the factors that contribute to departure delays.
-
 
 # Generalised Linear Model with family set to Binomial
 
@@ -279,16 +268,13 @@ zb_final_binominal %>%
   labs(x = "Train Line", y = "Proportion Delayed") +
   theme_minimal()
 
-
 ```
 
-In this plot, we can see that the EXT line has the highest proportion of delayed trains, with approximately 40% 
-of its services experiencing delays. The line with the second highest delay rate is the R71, where around 24% of trains are delayed. 
+In this plot, we can see that the EXT line has the highest proportion of delayed trains, with approximately 40% of its services experiencing delays. The line with the second highest delay rate is the R71, where around 24% of trains are delayed. 
 On the other end of the spectrum, the S41 line shows the lowest delay rate, with only about 10% of its trains being delayed.
-"
 
-To predict whether a train is delayed, we use a binomial logistic regression with Train_Delayed as the binary response variable 
-and LINIEN_TEXT (train line) as the predictor. This model estimates how the probability of delay varies across different train lines.
+
+To predict whether a train is delayed, we use a binomial logistic regression with Train_Delayed as the binary response variable and LINIEN_TEXT (train line) as the predictor. This model estimates how the probability of delay varies across different train lines.
 
 ```{r glm-delay, include=TRUE, echo=TRUE}
 
@@ -299,19 +285,14 @@ summary(glm_delay)
 ```
 
 The number of Fisher Scoring iterations is 7, which is an acceptable value.
-The dispersion parameter in the model was calculated by dividing the residual deviance (21375) by the residual degrees of 
-freedom (57209), yielding a value of 0.374. This value, being less than 1, indicates that there is no overdispersion in the 
-data. Therefore, the binomial model is an appropriate fit for the dataset, and no adjustments for overdispersion are necessary.
+The dispersion parameter in the model was calculated by dividing the residual deviance (21375) by the residual degrees of freedom (57209), yielding a value of 0.374. This value, being less than 1, indicates that there is no overdispersion in the data. Therefore, the binomial model is an appropriate fit for the dataset, and no adjustments for overdispersion are necessary.
 
+On one hand, the p-values for almost all the train lines are very small, indicating that the train lines have a statistically significant effect on whether a train is delayed or not. Since the coefficients for the train lines are negative, it suggests that the different train lines have a lower likeliness of being delayed compared to the baseline train line.
 
-On one hand, the p-values for almost all the train lines are very small, indicating that the train lines have a statistically significant 
-effect on whether a train is delayed or not. Since the coefficients for the train lines are negative, it suggests that the different train lines have a 
-lower likeliness of being delayed compared to the baseline train line.
 On the other hand, the train line R71, which operates between Meiringen and Innertkirchen, has a p-value above 0.05. This suggests that R71 does not have 
 a statistically significant impact on whether a train is delayed or not. This is interesting because, when the predictors were plotted, R71 was the line with 
 the second-highest probability of delay, with an average delay of around 24%.
-The reason for this contradiction could be that while the R71 line might often experience delays, the variance of the delays might be quite narrow. To explore this, 
-let's take a look at the boxplot of the train delays by line.
+The reason for this contradiction could be that while the R71 line might often experience delays, the variance of the delays might be quite narrow. To explore this, let's take a look at the boxplot of the train delays by line.
 
 ```{r boxplot-ANKUNFTDELAY_min-LINIEN_TEXT, include=TRUE, echo=TRUE}
 
@@ -319,13 +300,10 @@ boxplot(ANKUNFTDELAY_min ~ LINIEN_TEXT , data = zb_final_binominal)
 
 ```
 
-
 In the boxplot, we can see that the R71 has a relatively large variance between the 25th and 75th percentiles of the data. 
-Nevertheless, R71 has fewer outliers compared to the other lines. The delays on R71 might be consistent, but not extreme 
-enough to be detected as a significant predictor in the logistic regression model.
-Just because R71 has a relatively high average of being delay doesn't necessarily mean that the line itself significantly affects the likelihood of delays 
-when considering all other factors. The logistic regression model is trying to predict the probability of a delay (yes/no) based on various predictors. 
-Other variables—such as weather, time of day, or operational factors—might influence whether a delay occurs for R71 trains.
+Nevertheless, R71 has fewer outliers compared to the other lines. The delays on R71 might be consistent, but not extreme enough to be detected as a significant predictor in the logistic regression model.
+
+Just because R71 has a relatively high average of being delay doesn't necessarily mean that the line itself significantly affects the likelihood of delay when considering all other factors. The logistic regression model is trying to predict the probability of a delay (yes/no) based on various predictors. Other variables—such as weather, time of day, or operational factors—might influence whether a delay occurs for R71 trains.
 
 Lets have now a look at the coefficients of glm_delay
 
@@ -335,11 +313,7 @@ exp(coef(glm_delay)) %>% round(digits=2)
 
 ```
 
-To interpret the effect of different train lines on the likelihood of delays, the logistic regression coefficients were exponentiated to 
-obtain odds ratios. These odds ratios provide a clearer understanding of how the odds of a delay on each line compare to the baseline category, which in this model is the train line EXT. 
-All other train lines show odds ratios significantly below 1, indicating a lower likelihood of delay relative to EXT. For instance, trains on line IR have odds of being delayed that are only 9% of those on line EXT, 
-while line S41 shows an even stronger reduction, with odds at just 1%. Other notable examples include lines PE and R70, each with odds around 7–9% of the baseline, and line S5, with only 5% of the odds of a delay compared to EXT. 
-These findings suggest, as already seen in the previous plots, that line EXT has a particularly high likelihood of delays, while other lines operate with considerably greater punctuality.
+To interpret the effect of different train lines on the likelihood of delays, the logistic regression coefficients were exponentiated to obtain odds ratios. These odds ratios provide a clearer understanding of how the odds of a delay on each line compare to the baseline category, which in this model is the train line EXT. All other train lines show odds ratios significantly below 1, indicating a lower likelihood of delay relative to EXT. For instance, trains on line IR have odds of being delayed that are only 9% of those on line EXT, while line S41 shows an even stronger reduction, with odds at just 1%. Other notable examples include lines PE and R70, each with odds around 7–9% of the baseline, and line S5, with only 5% of the odds of a delay compared to EXT. These findings suggest, as already seen in the previous plots, that line EXT has a particularly high likelihood of delays, while other lines operate with considerably greater punctuality.
 
 The next step in our analysis involves simulating predictions based on the logistic regression model to better understand the likelihood of train delays. 
 This will help us evaluate the model's performance and gain insights into the probability of delays across different train lines.
@@ -360,7 +334,6 @@ simulated_data$predicted_prob <- predict(glm_delay, newdata = simulated_data, ty
 # Show the first few rows of the simulated data
 head(simulated_data)
 
-
 # Plotting the simulated probabilities of train delays by train line
 
 ggplot(simulated_data, aes(x = reorder(LINIEN_TEXT, predicted_prob), y = predicted_prob, color = LINIEN_TEXT)) +
@@ -374,8 +347,7 @@ ggplot(simulated_data, aes(x = reorder(LINIEN_TEXT, predicted_prob), y = predict
   )
 ```
 
-In this plot, we can see that the simulated data is similar to the original data. The EXT line shows a simulated probability of delay of approximately 40%, 
-while the R71 line has a simulated probability delay of around 24%. 
+In this plot, we can see that the simulated data is similar to the original data. The EXT line shows a simulated probability of delay of approximately 40%, while the R71 line has a simulated probability delay of around 24%. 
 On the other end, the S41 line exhibits the lowest simulated probability of delay, with only about 1% of its services experiencing delays.
 
 Lets now compare our simulated data with our real dataset.
@@ -388,7 +360,6 @@ summary(simulated_data)
 
 The mean of the simulated data is 0.105. This is the reason why we cannot take a threshold of 0.5. This would result in nearly all cases being classified as non-delayed, since very few predicted probabilities exceed 0.5—ultimately leading to extremely poor sensitivity and almost no true positives.
 Several thresholds were tested to determine the optimal cut-off point for classifying delays based on the predicted probabilities. Thresholds such as 0.03, 0.08, and 0.1 were evaluated, but they either led to a very low specificity or poor sensitivity. A threshold of 0.2 appeared to offer the most reasonable trade-off between correctly identifying delayed trains (sensitivity) and avoiding false delay predictions (specificity), making it the most balanced choice for this model.
-
 
 ```{r confusion-matrix-simulated-data, include=TRUE, echo=TRUE}
 # Discretize the simulated data
@@ -411,16 +382,15 @@ conf_matrix <- confusionMatrix(as.factor(simulated_sample$simulated_delay), as.f
 print(conf_matrix)
 ```
 
-The model's accuracy is 76.96%, which at first glance suggests decent performance, but this metric is heavily influenced by
-the significant imbalance between delayed and non-delayed trains in the dataset. Due to the high punctuality of Swiss trains, 
-the vast majority of observations are non-delays, making accuracy a somewhat misleading indicator of model effectiveness. 
-Sensitivity, which captures how well the model identifies actual delays, is fairly high at 79.8%, indicating that the model 
-detects most delay cases. However, specificity is low at 20.0%, meaning it struggles to correctly identify non-delayed trains, 
-frequently labeling them as delayed. The model's precision is high at 95.2%, so when it predicts a delay, it is usually right. 
-On the other hand, the negative predictive value is low at 4.7%, reflecting poor performance in correctly predicting trains that are on time. 
-Balanced accuracy, which considers both sensitivity and specificity, is 49.9% suggesting the model performs no better than random guessing 
-when it comes to balancing delay and non-delay predictions.
-Despite strong precision for delays, the inability to reliably detect non-delays remains a key weakness. Several threshold values were tested to improve this balance, 
-but none led to a meaningful improvement in the confusion matrix. A threshold of 0.2 offered the best compromise between sensitivity and specificity among the tested options. 
+The model's accuracy is 76.96%, which at first glance suggests decent performance, but this metric is heavily influenced by the significant imbalance between delayed and non-delayed trains in the dataset. Due to the high punctuality of Swiss trains, the vast majority of observations are non-delays, making accuracy a somewhat misleading indicator of model effectiveness. 
+
+Sensitivity, which captures how well the model identifies actual delays, is fairly high at 79.8%, indicating that the model detects most delay cases. However, specificity is low at 20.0%, meaning it struggles to correctly identify non-delayed trains, frequently labeling them as delayed. The model's precision is high at 95.2%, so when it predicts a delay, it is usually right. 
+
+On the other hand, the negative predictive value is low at 4.7%, reflecting poor performance in correctly predicting trains that are on time.
+
+Balanced accuracy, which considers both sensitivity and specificity, is 49.9% suggesting the model performs no better than random guessing when it comes to balancing delay and non-delay predictions.
+
+Despite strong precision for delays, the inability to reliably detect non-delays remains a key weakness. Several threshold values were tested to improve this balance but none led to a meaningful improvement in the confusion matrix. A threshold of 0.2 offered the best compromise between sensitivity and specificity among the tested options. 
+
 For future work, further adjustments addressing the class imbalance and a more refined threshold selection process may be necessary to enhance model reliability across both outcome classes.
 
