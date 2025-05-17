@@ -58,7 +58,11 @@ A secondary goal is to address known data quality issues in Zentralbahn’s inte
 
 - Investigating the **November 2024 dataset**, which is considered consistent and reliable,
 - Exploring the potential to **predict or classify missing train station values** using available variables such as timestamps, route IDs, or event sequences,
-- Developing a methodology that could later be applied to **recover and correct corrupted historical datasets**.
+- Developing a methodology that could later be applied to **recover and correct corrupted historical datasets**.¨
+
+# Report Structure!
+
+The following chapters present different approaches to modeling. The analysis begins with a general approach, using an initial artificial neural network (ANN) without extensive knowledge of the data. It then progresses toward more granular and detailed models. In the final chapter, the insights gained throughout the analysis are consolidated and integrated into a comprehensive model.
 
 
 ```{r Imports}
@@ -74,7 +78,7 @@ theme_set(theme_bw())
 
 ```
 
-# A First Look: Predicting Train Cancellations with an Artificial Neural Network
+# A First Look: Artificial Neural Network
 
 This chapter investigates the predictability of train cancellations without performing prior exploratory data analysis (EDA). It serves as an initial attempt to understand the underlying data. More detailed analyses using simpler and more interpretable models will follow in subsequent chapters.
 
