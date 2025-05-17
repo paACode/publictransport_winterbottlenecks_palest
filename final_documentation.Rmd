@@ -107,7 +107,7 @@ v.to.drop <- c("AN_PROGNOSE", "AN_PROGNOSE_STATUS", "AB_PROGNOSE",
                "RUSH_HOUR", "Delay_Category", "ZIEL", "START", "FAHRT_BEZEICHNER"
 )
 
-d.ann<- read.csv("zentrahlbahn_final.csv") %>% 
+d.ann<- read.csv("data/zentrahlbahn_final.csv") %>% 
   select(-all_of(v.to.drop), -starts_with("w_")) # Also drop all weather data
 
 
@@ -263,7 +263,7 @@ library(caret)
 
 #Creating subset
 
-zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
+zb_final <- read.csv("data/zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
 
 # Define the specific Haltestellen in the region of Lucerne
 haltestellen_to_keep <- c("Luzern", "Luzern Allmend/Messe", "Kriens Mattenhof", "Horw", 
@@ -392,7 +392,7 @@ The adjusted R² value of 0.119 means that the model explains around 11.9% of th
 
 ```{r binary-codes-subset, include=TRUE, echo=TRUE}
 
-zb_final <- read.csv("zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
+zb_final <- read.csv("data/zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
 
 #Subset
 zb_final_binominal <- zb_final %>%
@@ -600,7 +600,7 @@ library(gridExtra)
 library(caret)
 
 #### Read in Data ####----------------------------------------------------------
-d.poisson<- read.csv("zentrahlbahn_final.csv") %>% 
+d.poisson<- read.csv("data/zentrahlbahn_final.csv") %>% 
   dplyr::select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE,
          ANKUNFTDELAY_sec, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_sec,FAELLT_AUS_TF,
          Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_min_c_Luzern, w_temp_avg_c_Luzern)

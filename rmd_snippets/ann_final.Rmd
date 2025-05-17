@@ -73,7 +73,7 @@ v.to.drop <- c("AN_PROGNOSE", "AN_PROGNOSE_STATUS", "AB_PROGNOSE",
                "RUSH_HOUR", "Delay_Category", "ZIEL", "START", "FAHRT_BEZEICHNER"
 )
 
-d.ann<- read.csv("zentrahlbahn_final.csv") %>% 
+d.ann<- read.csv("../data/zentrahlbahn_final.csv") %>% 
   select(-all_of(v.to.drop), -starts_with("w_")) # Also drop all weather data
 
 
