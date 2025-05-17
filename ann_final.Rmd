@@ -1,0 +1,178 @@
+---
+title: "Artificial Neural Networtk"
+subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport_winterbottlenecks_palest)"
+author:  "Pascal"
+date: "05.04.2025"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+---
+
+```{r, echo=FALSE , include=FALSE}
+## Document related Settings and Libs
+library(knitr) 
+library(details)    # allows collapsible code blocks
+library(gt)         # formats tables nicely
+library(scales)   
+
+## general language settings
+Sys.setenv(LANG = "en")
+
+## Default Settings for R-Chunks
+opts_chunk$set(echo = FALSE ,
+               include = FALSE,
+               comment = NA,
+               eval = TRUE,
+               message = FALSE,
+               warning = FALSE)
+```
+
+```{r Imports}
+
+library(dplyr)
+library(nnet)
+library(gamlss.add)
+library(dplyr)
+library(ggplot2)
+library(caret)
+theme_set(theme_bw())
+
+```
+
+This chapter investigates the predictability of train cancellations without prior exploratory data analysis. It serves as an initial approach to gain a first understanding of the underlying data. More detailed analyses using simpler and more interpretable models will follow in subsequent chapters. Nevertheless, an artificial neural network (ANN) enables the construction of a predictive model without extensive knowledge of the data structure and can still provide initial indications as to whether the data contains a meaningful signal.
+
+So we directly jump in an try to predict if a train is cancelled based on all available variables except the ones which already reveal if a train is cancelled or not which are:
+- AN_PROGNOSE and AB_PROGNOSE: Is always NA when train is cancelled
+- AN_PRONOSE_STATUS and AB_PROGNOSE_STATUS : Is always "UNBEKANNT" when cancelled
+- ABFAHRTDELAY_sec", "ABFAHRTDELAY_min","ANKUNFTDELAY_sec", "ANKUNFTDELAY_min" can in consequence also not be used as 
+
+```{r Read Data}
+#### Read in Data ####----------------------------------------------------------
+v.to.drop <- c("AN_PROGNOSE", "AN_PROGNOSE_STATUS", "AB_PROGNOSE",
+                  "ABFAHRTDELAY_sec", "ABFAHRTDELAY_min",
+                  "ANKUNFTDELAY_sec", "ANKUNFTDELAY_min")
+
+d.ann<- read.csv("zentrahlbahn_final.csv") %>% 
+  select(-all_of(v.to.drop))
+
+
+```
+
+```{r Ratio Cancelled}
+d.ann.cancelled <- d.ann %>% 
+  filter(FAELLT_AUS_TF == TRUE)
+cancelled <- nrow(d.ann.cancelled)
+tot <- nrow(d.ann)
+r.cancelled <- cancelled/tot
+rm(d.ann.cancelled)
+```
+
+
+The first step is to see how many trains are cancelled.  It is very intersting that `r percent(r.cancelled)` of all observations are cancelled
+
+For the data preparation we need to make sure all the variables are either numerical or factors which can be one-hot encoded. Therefore we drop the times
+"ANKUNFTSZEIT" and "ABFAHRTSZEIT" becuase they would result in a huge amount of levels.
+
+
+```{r Perpare Data}
+convert_all_possible_to_factor <- function(df) {
+  df[] <- lapply(df, function(col) {
+    if (is.character(col) || is.logical(col)) {
+      as.factor(col)
+    } else {
+      col
+    }
+  })
+  return(df)
+}
+drop_factors_with_less_than_two_levels <- function(df) {
+  # Identify factors with fewer than two levels (0 or 1)
+  small_level <- sapply(df, function(x) is.factor(x) && length(levels(x)) < 2)
+  
+  # Remove those columns
+  df_clean <- df[, !small_level, drop = FALSE]
+  
+  return(df_clean)
+}
+
+d.ann <- convert_all_possible_to_factor(d.ann)
+d.ann <- drop_factors_with_less_than_two_levels(d.ann)
+d.ann <- d.ann %>% select(!ANKUNFTSZEIT) #Remove Time 
+d.ann <- d.ann %>% select(!ABFAHRTSZEIT) #Remove Time 
+
+#Create Dummy Variables 
+dummies <- dummyVars(~ ., data = d.ann)
+data_dummies <- predict(dummies, newdata = d.ann)
+
+```
+
+
+`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r Inspect Variables}
+#### Read in Data ####----------------------------------------------------------
+
+stops <-  unique(d.ann.cancelled$HALTESTELLEN_NAME)
+betriebstag <-  unique(d.ann.cancelled$BETRIEBSTAG)
+table(d.ann.cancelled$BETRIEBSTAG) # There seem to be some days which are more prone to delay, from 25 on food again --> 
+
+table(d.ann.cancelled$VERKEHRSMITTEL_TEXT) # A lot of R trains are cancelled
+table(d.ann.cancelled$ZUSATZFAHRT_TF) #Zusatzfahrt are not enough
+
+table(d.ann.cancelled$LINIEN_TEXT) # R70 and R71 would be very good predictors
+
+table(d.ann.cancelled$HALTESTELLEN_NAME) # It would be interesting how good it performs after we remove data from Brienz and stuff
+
+table(d.ann.cancelled$START)
+table(d.ann.cancelled$ZIEL)
+
+
+d.ann.reduced <- d.ann.cancelled %>% filter(!LINIEN_TEXT %in% c("R70", "R71"))
+
+nrow(d.ann.reduced)
+
+table(d.ann.reduced$HALTESTELLEN_NAME)
+
+
+
+```
+
