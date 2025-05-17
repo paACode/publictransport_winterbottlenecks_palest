@@ -112,7 +112,7 @@ d.ann <- d.ann %>% select(!ANKUNFTSZEIT) #Remove Time
 d.ann <- d.ann %>% select(!ABFAHRTSZEIT) #Remove Time 
 
 d.ann.rv <-  d.ann %>% select(FAELLT_AUS_TF) # Response Variable
-d.ann.pred <-  d.ann %>% select(!FAELLT_AUS_TF) #Predictors
+d.ann.pred <-  d.ann %>% select(LINIEN_TEXT)
 
 
 #Create Dummy Variables 
@@ -155,7 +155,7 @@ train_downsampled <- train_downsampled[sample(nrow(train_downsampled)), ]
 
 
 set.seed(412)
-fealltaus_net <- nnet(FAELLT_AUS_TF ~ . , data = train_downsampled, size=10, maxit=500, range=0.1, decay=1e-4, MaxNWts = 10000)
+fealltaus_net <- nnet(FAELLT_AUS_TF ~  ., data = train_downsampled, size=10, maxit=500, range=0.1, decay=1e-4, MaxNWts = 10000)
 
 ```
 
@@ -163,7 +163,8 @@ fealltaus_net <- nnet(FAELLT_AUS_TF ~ . , data = train_downsampled, size=10, max
 
 
 ```{r Test the twork}
-pred <- predict(fealltaus_net, test, type="class")
+test.n.result <- test %>% select(-FAELLT_AUS_TF)
+pred <- predict(fealltaus_net, test.n.result, type="class")
 cm_nn <- table(pred=pred, true=test$FAELLT_AUS_TF)
 cm_nn
 
