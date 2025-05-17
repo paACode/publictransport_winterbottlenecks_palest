@@ -1,29 +1,29 @@
-# opentransport_analysis_palest
+# Project Documentation
 
-##Git Workflow
+This project contains the source code, data, and documentation related to the analysis and modeling of the Zentralbahn dataset.
 
-Command | Description
--|- 
-git status | *1st* check if there are any changes made
-git pull origin main | *2nd* Download latest changes and merge into your current local branch which is main
-git add filename.rmd | *3rd* Stage the changes made to the filename.rmd
-git add anotherfile.txt | Stage the changes made to the anotherfile.txt 
-git add xyz.R | Repeat this until all the files you want to commit are staged
-git commit -m "I am a useful commend" | *4th* Commit the changes with a good comment
-git push origin main | *5th*  Uploads your commited changes to the remote 
+## Project Structure
 
-##Git Useful Commands
+- **final_documentatoin.Rmd**  
+  Contains all relevant source code written in R, combined with comprehensive documentation of the analysis and modeling process. This is the final consolidated document.
 
-Command | Description
--|- 
-git diff xyz.R | Shows what is different between current file and staging area
-gitk -all  | Shows history graphically
-git stash | Saves local changes temporarily somewhere and puts repo back to previous state
-git stash apply | gets back last stash
+- **rnd_snippets/**  
+  A folder with R Markdown snippets (`.Rmd` files) that were used during the exploratory phase to test and develop different models. All final versions of these analyses are integrated into `final_documentatoin.Rmd`.
 
+- **screenshots/**  
+  Contains screenshots used for documentation purposes.
 
-## Convention Writing
+- **Scripts/**  
+  R scripts used to create the dataset and to generate initial models.
 
-- CSV files
-- Non cursive text
-- [text](https://) 
+- **data/**  
+  This folder contains:  
+  - `zentralbahn_final.csv`: The main dataset used for the analysis.  
+  - Raw data files.  
+  - Intermediate CSV files generated during data processing.
+
+## Note
+
+The paths to `zentralbahn_final.csv` in the scripts and R Markdown snippets may not be up to date. Users need to verify and update the file paths accordingly before running any scripts.
+
+Nevertheless, there should be no need to run the individual scripts or snippets, as all relevant and final code is contained within `final_documentatoin.Rmd`.
