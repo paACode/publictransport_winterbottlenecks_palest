@@ -49,16 +49,18 @@ This chapter investigates the predictability of train cancellations without prio
 So we directly jump in an try to predict if a train is cancelled based on all available variables except the ones which already reveal if a train is cancelled or not which are:
 - AN_PROGNOSE and AB_PROGNOSE: Is always NA when train is cancelled
 - AN_PRONOSE_STATUS and AB_PROGNOSE_STATUS : Is always "UNBEKANNT" when cancelled
-- ABFAHRTDELAY_sec", "ABFAHRTDELAY_min","ANKUNFTDELAY_sec", "ANKUNFTDELAY_min" can in consequence also not be used as 
+- Also all derived columns like ABFAHRTDELAY_sec", "ABFAHRTDELAY_min","ANKUNFTDELAY_sec", "ANKUNFTDELAY_min", "RUSH_HOUR", "TAGESZEIT" are dropped
+
 
 ```{r Read Data}
 #### Read in Data ####----------------------------------------------------------
 v.to.drop <- c("AN_PROGNOSE", "AN_PROGNOSE_STATUS", "AB_PROGNOSE",
                   "ABFAHRTDELAY_sec", "ABFAHRTDELAY_min",
-                  "ANKUNFTDELAY_sec", "ANKUNFTDELAY_min")
+                  "ANKUNFTDELAY_sec", "ANKUNFTDELAY_min", "TAGESZEIT", "RUSH_HOUR"
+               )
 
 d.ann<- read.csv("zentrahlbahn_final.csv") %>% 
-  select(-all_of(v.to.drop))
+  select(-all_of(v.to.drop), -starts_with("w_")) # Also drop all weather data
 
 
 ```
@@ -99,27 +101,75 @@ drop_factors_with_less_than_two_levels <- function(df) {
   
   return(df_clean)
 }
+drop_non_factors <- function(df) {
+  df[, sapply(df, is.factor), drop = FALSE]
+}
 
 d.ann <- convert_all_possible_to_factor(d.ann)
 d.ann <- drop_factors_with_less_than_two_levels(d.ann)
+d.ann <- drop_non_factors(d.ann) 
 d.ann <- d.ann %>% select(!ANKUNFTSZEIT) #Remove Time 
 d.ann <- d.ann %>% select(!ABFAHRTSZEIT) #Remove Time 
 
+d.ann.rv <-  d.ann %>% select(FAELLT_AUS_TF) # Response Variable
+d.ann.pred <-  d.ann %>% select(!FAELLT_AUS_TF) #Predictors
+
+
 #Create Dummy Variables 
-dummies <- dummyVars(~ ., data = d.ann)
-data_dummies <- predict(dummies, newdata = d.ann)
+dummies <- dummyVars(~ ., data = d.ann.pred)
+data_dummies <- predict(dummies, newdata = d.ann.pred)
+
+# Add one hot encoded predictors to RV
+d.ann.rdy <- bind_cols(d.ann.rv, data_dummies)
+
+```
+
+The train and test dataset still has 20% of observations which are cancelled and 80% which are not . 
+```{r Test and Train Data}
+set.seed(123)
+train_index <- createDataPartition(d.ann.rdy$FAELLT_AUS_TF, p = 0.8, list = FALSE)
+
+train <- d.ann.rdy[train_index, ]
+test <- d.ann.rdy[-train_index, ]
+
+# Make sure there are as much Cancelled as Non Cancelled observations in Train Data
+majority_class <- train[train$FAELLT_AUS_TF == FALSE, ]
+minority_class <- train[train$FAELLT_AUS_TF == TRUE, ]
+
+# Sample from majority class to match minority class size
+set.seed(123)
+majority_downsampled <- majority_class[sample(nrow(majority_class), nrow(minority_class)), ]
+
+# Combine minority class with downsampled majority class
+train_downsampled <- rbind(minority_class, majority_downsampled)
+
+# Shuffle rows 
+train_downsampled <- train_downsampled[sample(nrow(train_downsampled)), ]
+
+
 
 ```
 
 
-`
+```{r Build the network}
+
+
+set.seed(412)
+fealltaus_net <- nnet(FAELLT_AUS_TF ~ . , data = train_downsampled, size=10, maxit=500, range=0.1, decay=1e-4, MaxNWts = 10000)
+
+```
 
 
 
 
+```{r Test the twork}
+pred <- predict(fealltaus_net, test, type="class")
+cm_nn <- table(pred=pred, true=test$FAELLT_AUS_TF)
+cm_nn
 
+confusionMatrix(as.factor(pred), as.factor(test$FAELLT_AUS_TF))
 
-
+```
 
 
 
