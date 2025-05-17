@@ -2,7 +2,7 @@
 title: "Public Transport Winterbottlenecks"
 subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport_winterbottlenecks_palest)"
 author: "Leonard, Stefan, Pascal"
-date: "24.03.2025"
+date: "17.05.2025"
 output:
   html_document:
     toc: true
@@ -12,26 +12,6 @@ output:
     toc: true
     toc_depth: '3'
 ---
-```{r R Chunk Example 1 : I am not included in the Document at all}
-
-a= 5
-print(a)
-```
-
-```{r Chunk Example 2 : My result is included in the Document, include=TRUE}
-
-a= 5
-print(a)
-```
-
-```{r Chunk Example 3 : My code and result is included in the Document, include=TRUE, echo=TRUE}
-
-a= 5
-print(a)
-
-```
-
-
 
 
 ```{r, echo=FALSE , include=FALSE}
@@ -51,6 +31,38 @@ opts_chunk$set(echo = FALSE ,
                message = FALSE,
                warning = FALSE)
 ```
+
+
+
+# Introduction
+
+Zentralbahn, a regional railway company, identified a pressing need to improve the overall performance of its train operations. In response, the company initiated a comprehensive, data-driven investigation aimed at uncovering operational inefficiencies and ensuring long-term service reliability.
+
+As part of this initiative, Zentralbahn engaged an external data science consultant to analyze publicly available OpenTransportData. The consultant’s initial findings revealed a noticeable performance bottleneck in November 2024, likely linked to seasonal, winter-related disruptions.
+
+Although Zentralbahn already had an internal hypothesis regarding the cause, the company is committed to an open, evidence-based approach and is seeking independent confirmation and fresh insights. To broaden the analytical perspective, Zentralbahn partnered with the Hochschule Luzern (HSLU) to carry out a dedicated project using operational data from November 2024.
+
+# Project Goals
+
+<u>**1. Identifying Root Causes of Performance Bottlenecks** </u>
+
+The primary objective is to analyze train operations during **November 2024** to:
+
+- Validate Zentralbahn’s internal assumptions about winter-related disruptions,
+- Identify underlying patterns or unexpected factors contributing to performance bottlenecks,
+- Provide data-driven recommendations for improving punctuality and operational efficiency on affected lines.
+
+<u>**2. Improving Data Quality Through Predictive Modeling **</u>
+
+A secondary goal is to address known data quality issues in Zentralbahn’s internal datasets. Specifically, several records contain **missing or incorrect train station entries**. HSLU is tasked with:
+
+- Investigating the **November 2024 dataset**, which is considered consistent and reliable,
+- Exploring the potential to **predict or classify missing train station values** using available variables such as timestamps, route IDs, or event sequences,
+- Developing a methodology that could later be applied to **recover and correct corrupted historical datasets**.
+
+
+
+
 
 
 # Generalised Additive Models GAM
@@ -394,3 +406,42 @@ Despite strong precision for delays, the inability to reliably detect non-delays
 
 For future work, further adjustments addressing the class imbalance and a more refined threshold selection process may be necessary to enhance model reliability across both outcome classes.
 
+
+
+
+# Conclusion
+
+The analysis confirmed what Zentralbahn had likely anticipated: a **severe thunderstorm** caused substantial disruption to train operations, as documented in the official report on the reopening of the **Meiringen–Interlaken Ost** route on **November 25, 2024** ([source](https://www.zentralbahn.ch/de/kennenlernen/die-zentralbahn/einblicke/wiedereroeffnung-der-strecke-meiringen-interlaken-ost-am-25-november-2024)).
+
+In addition to this expected finding, several other valuable insights were uncovered through the application of various statistical models. Importantly, **the models developed can be used to predict delays under different operational conditions**, providing a foundation for proactive planning and decision-making.
+
+
+
+<u>**1. High Delay Probability for "EXT" Trains**</u>  
+
+Extra trains ("EXT") were found to have the highest probability of delay. A likely reason is the use of older trainsets, which may be less reliable or slower to adapt to schedule changes.  
+The model allows for **predicting the likelihood of delay** for individual train entries based on their train type and other features, enabling early intervention or scheduling adjustments.
+
+<u>**2. Limited Influence of Weather**</u>
+
+Weather conditions showed only a **limited direct effect** on train delays. This is likely due to **low temporal resolution** in the available weather data.  
+Still, the model can be used to **quantify expected delay contributions from weather** where data is available, and it is ready to be improved once finer-grained weather data is incorporated.
+
+<u>**3. Operational Patterns and Delay Clusters**</u>  
+
+The model identified three distinct operational time categories, with **rush hours** exhibiting the most frequent delays. While traffic volume is a plausible factor, this recurring pattern hints at **systemic scheduling or resource constraints**.  
+With this model, it is possible to **predict the expected number of delays per hour** based on operational time and other variables, supporting staffing and dispatch decisions.
+
+Defined operational periods:
+
+- **Low Operation:** 00:00 – 06:00  
+- **Rush Hour:** 06:00 – 09:00, 11:00 – 14:00, and 16:00 – 20:00  
+- **Normal Operation:** All other times
+
+<u>**4. Noteworthy Dates and Events**</u>
+
+The following dates and events stood out in the analysis and can inform the refinement of future models:
+
+- **Extreme Delay Days:** November 22 and 23, 2024 – identified as outlier days with unusually high delays  
+- **Route Reopening:** From **November 25, 2024**, the Meiringen–Interlaken Ost line resumed normal service ([details](https://www.zentralbahn.ch/de/kennenlernen/die-zentralbahn/einblicke/wiedereroeffnung-der-strecke-meiringen-interlaken-ost-am-25-november-2024))  
+- **Return to Normal Operation:** Delay patterns normalized after the disruption, serving as a **benchmark period for predictive model calibration**
