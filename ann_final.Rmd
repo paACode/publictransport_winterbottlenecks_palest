@@ -44,13 +44,24 @@ theme_set(theme_bw())
 
 ```
 
-This chapter investigates the predictability of train cancellations without prior exploratory data analysis. It serves as an initial approach to gain a first understanding of the underlying data. More detailed analyses using simpler and more interpretable models will follow in subsequent chapters. Nevertheless, an artificial neural network (ANN) enables the construction of a predictive model without extensive knowledge of the data structure and can still provide initial indications as to whether the data contains a meaningful signal.
+# A First Look: Predicting Train Cancellations with an Artificial Neural Network
 
-So we directly jump in an try to predict if a train is cancelled based on all available variables except the ones which already reveal if a train is cancelled or not which are:
-- AN_PROGNOSE and AB_PROGNOSE: Is always NA when train is cancelled
-- AN_PRONOSE_STATUS and AB_PROGNOSE_STATUS : Is always "UNBEKANNT" when cancelled
-- Also all derived columns like ABFAHRTDELAY_sec", "ABFAHRTDELAY_min","ANKUNFTDELAY_sec", "ANKUNFTDELAY_min", "RUSH_HOUR", "TAGESZEIT", "DELAY_CATEGORY", "ZIEL", "START" are dropped
-- "FAHRT_BEZEICHNER" we also drop because it has to many levels 384 --> takes to long
+This chapter investigates the predictability of train cancellations without performing prior exploratory data analysis (EDA). It serves as an initial attempt to understand the underlying data. More detailed analyses using simpler and more interpretable models will follow in subsequent chapters.
+
+An artificial neural network (ANN) enables the construction of a predictive model without requiring extensive knowledge of the data structure. It can provide early indications of whether the data contains a meaningful signal.
+
+Therefore, the approach directly attempts to predict whether a train is cancelled, using all available variables, except those that explicitly reveal cancellation status. These are:
+
+
+- `AN_PROGNOSE` and `AB_PROGNOSE`: Always `NA` when a train is cancelled
+- `AN_PROGNOSE_STATUS` and `AB_PROGNOSE_STATUS`: Always `"UNBEKANNT"` when cancelled
+- All derived columns such as:
+  - `ABFAHRTDELAY_sec`, `ABFAHRTDELAY_min`
+  - `ANKUNFTDELAY_sec`, `ANKUNFTDELAY_min`
+  - `RUSH_HOUR`, `TAGESZEIT`, `DELAY_CATEGORY`
+  - `ZIEL`, `START`
+  
+These variables are excluded to avoid data leakage.
 
 
 ```{r Read Data}
@@ -78,10 +89,18 @@ rm(d.ann.cancelled)
 ```
 
 
-The first step is to see how many trains are cancelled.  It is very intersting that `r percent(r.cancelled)` of all observations are cancelled
+## Data Preparation
 
-For the data preparation we need to make sure all the variables are either numerical or factors which can be one-hot encoded. Therefore we drop the times
-"ANKUNFTSZEIT" and "ABFAHRTSZEIT" becuase they would result in a huge amount of levels.
+As a first step, the distribution of the response variable is examined. An initial analysis indicates that `r percent(r.cancelled)` of the trains in the dataset are cancelled. This was taken into account during data preparation. For the ANN to work, the following steps were performed:
+
+1. Convert character and logical variables to factors  
+2. Remove factors with fewer than two levels (contain no information)  
+3. Use only factor variables to keep the ANN simple  
+4. Drop time columns because they include a large number of levels  
+5. Perform one-hot encoding  
+6. Stratify train and test data  
+7. Downsample train data to ensure an equal number of cancelled and uncancelled trains  
+
 
 
 ```{r Perpare Data}
@@ -116,6 +135,7 @@ d.ann <- d.ann %>% select(!ABFAHRTSZEIT) #Remove Time
 
 d.ann.rv <-  d.ann %>% select(FAELLT_AUS_TF) # Response Variable
 d.ann.pred <-  d.ann %>% select(BETRIEBSTAG, LINIEN_TEXT,HALTESTELLEN_NAME) 
+# BEtriebstag, LinienText and Haltestellenname are the predictors for the model
 
 
 #Create Dummy Variables 
@@ -127,8 +147,8 @@ d.ann.rdy <- bind_cols(d.ann.rv, data_dummies)
 
 ```
 
-The train and test dataset still has 20% of observations which are cancelled and 80% which are not . 
-```{r Test and Train Data}
+
+```{r Test and Train Data, echo =TRUE}
 set.seed(123)
 train_index <- createDataPartition(d.ann.rdy$FAELLT_AUS_TF, p = 0.8, list = FALSE)
 
@@ -153,21 +173,33 @@ train_downsampled <- train_downsampled[sample(nrow(train_downsampled)), ]
 
 ```
 
+## Building the Network
+
+Building the Network included a lot of trial and error. Because for many configurations the model did not converge. In the end 3 predictors could be found which lead to quite good prediction:
+
+- BETRIEBSTAG
+- LINIEN_TEXT
+- HALTESTELLEN_NAME
 
 
 
-```{r Build the network}
+```{r Build the network, echo=TRUE, cache =TRUE}
 
 
 set.seed(412)
 fealltaus_net <- nnet(FAELLT_AUS_TF ~  ., data = train_downsampled, size=15, maxit=500, range=0.1, decay=1e-4, MaxNWts = 10000)
-
 ```
 
+```{r Plot NET, include =TRUE}
+plot(fealltaus_net)
+```
+
+## Results
+
+The model successfully predicts train cancellations using only three categorical predictors: **BETRIEBSTAG**, **LINIEN_TEXT**, and **HALTESTELLEN_NAME**. Despite the test data containing 80% uncancelled and 20% cancelled trains, the model performs well thanks to stratification and downsampling during training. These results suggest that these predictors are promising candidates for more detailed modeling and analysis.
 
 
-
-```{r Test the twork}
+```{r Test the Network, include=TRUE}
 test.n.result <- test %>% select(-FAELLT_AUS_TF)
 pred <- predict(fealltaus_net, test.n.result, type="class")
 cm_nn <- table(pred=pred, true=test$FAELLT_AUS_TF)
@@ -176,59 +208,3 @@ cm_nn
 confusionMatrix(as.factor(pred), as.factor(test$FAELLT_AUS_TF))
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r Inspect Variables}
-#### Read in Data ####----------------------------------------------------------
-
-stops <-  unique(d.ann.cancelled$HALTESTELLEN_NAME)
-betriebstag <-  unique(d.ann.cancelled$BETRIEBSTAG)
-table(d.ann.cancelled$BETRIEBSTAG) # There seem to be some days which are more prone to delay, from 25 on food again --> 
-
-table(d.ann.cancelled$VERKEHRSMITTEL_TEXT) # A lot of R trains are cancelled
-table(d.ann.cancelled$ZUSATZFAHRT_TF) #Zusatzfahrt are not enough
-
-table(d.ann.cancelled$LINIEN_TEXT) # R70 and R71 would be very good predictors
-
-table(d.ann.cancelled$HALTESTELLEN_NAME) # It would be interesting how good it performs after we remove data from Brienz and stuff
-
-table(d.ann.cancelled$START)
-table(d.ann.cancelled$ZIEL)
-
-
-d.ann.reduced <- d.ann.cancelled %>% filter(!LINIEN_TEXT %in% c("R70", "R71"))
-
-nrow(d.ann.reduced)
-
-table(d.ann.reduced$HALTESTELLEN_NAME)
-
-
-
-```
-
