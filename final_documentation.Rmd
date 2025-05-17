@@ -61,8 +61,183 @@ A secondary goal is to address known data quality issues in Zentralbahn’s inte
 - Developing a methodology that could later be applied to **recover and correct corrupted historical datasets**.
 
 
+```{r Imports}
+
+library(dplyr)
+library(scales)
+library(nnet)
+library(gamlss.add)
+library(dplyr)
+library(ggplot2)
+library(caret)
+theme_set(theme_bw())
+
+```
+
+# A First Look: Predicting Train Cancellations with an Artificial Neural Network
+
+This chapter investigates the predictability of train cancellations without performing prior exploratory data analysis (EDA). It serves as an initial attempt to understand the underlying data. More detailed analyses using simpler and more interpretable models will follow in subsequent chapters.
+
+An artificial neural network (ANN) enables the construction of a predictive model without requiring extensive knowledge of the data structure. It can provide early indications of whether the data contains a meaningful signal.
+
+Therefore, the approach directly attempts to predict whether a train is cancelled, using all available variables, except those that explicitly reveal cancellation status. These are:
 
 
+- `AN_PROGNOSE` and `AB_PROGNOSE`: Always `NA` when a train is cancelled
+- `AN_PROGNOSE_STATUS` and `AB_PROGNOSE_STATUS`: Always `"UNBEKANNT"` when cancelled
+- All derived columns such as:
+  - `ABFAHRTDELAY_sec`, `ABFAHRTDELAY_min`
+  - `ANKUNFTDELAY_sec`, `ANKUNFTDELAY_min`
+  - `RUSH_HOUR`, `TAGESZEIT`, `DELAY_CATEGORY`
+  - `ZIEL`, `START`
+  
+These variables are excluded to avoid data leakage.
+
+
+```{r Read Data}
+#### Read in Data ####----------------------------------------------------------
+v.to.drop <- c("AN_PROGNOSE", "AN_PROGNOSE_STATUS", "AB_PROGNOSE",
+               "AB_PROGNOSE_STATUS",
+               "ABFAHRTDELAY_sec", "ABFAHRTDELAY_min",
+               "ANKUNFTDELAY_sec", "ANKUNFTDELAY_min", "TAGESZEIT", 
+               "RUSH_HOUR", "Delay_Category", "ZIEL", "START", "FAHRT_BEZEICHNER"
+)
+
+d.ann<- read.csv("zentrahlbahn_final.csv") %>% 
+  select(-all_of(v.to.drop), -starts_with("w_")) # Also drop all weather data
+
+
+```
+
+```{r Ratio Cancelled}
+d.ann.cancelled <- d.ann %>% 
+  filter(FAELLT_AUS_TF == TRUE)
+cancelled <- nrow(d.ann.cancelled)
+tot <- nrow(d.ann)
+r.cancelled <- cancelled/tot
+rm(d.ann.cancelled)
+```
+
+
+## Data Preparation
+
+As a first step, the distribution of the response variable is examined. An initial analysis indicates that `r percent(r.cancelled)` of the trains in the dataset are cancelled. This was taken into account during data preparation. For the ANN to work, the following steps were performed:
+
+1. Convert character and logical variables to factors  
+2. Remove factors with fewer than two levels (contain no information)  
+3. Use only factor variables to keep the ANN simple  
+4. Drop time columns because they include a large number of levels  
+5. Perform one-hot encoding  
+6. Stratify train and test data  
+7. Downsample train data to ensure an equal number of cancelled and uncancelled trains  
+
+
+
+```{r Perpare Data}
+convert_all_possible_to_factor <- function(df) {
+  df[] <- lapply(df, function(col) {
+    if (is.character(col) || is.logical(col)) {
+      as.factor(col)
+    } else {
+      col
+    }
+  })
+  return(df)
+}
+drop_factors_with_less_than_two_levels <- function(df) {
+  # Identify factors with fewer than two levels (0 or 1)
+  small_level <- sapply(df, function(x) is.factor(x) && length(levels(x)) < 2)
+  
+  # Remove those columns
+  df_clean <- df[, !small_level, drop = FALSE]
+  
+  return(df_clean)
+}
+drop_non_factors <- function(df) {
+  df[, sapply(df, is.factor), drop = FALSE]
+}
+
+d.ann <- convert_all_possible_to_factor(d.ann)
+d.ann <- drop_factors_with_less_than_two_levels(d.ann)
+d.ann <- drop_non_factors(d.ann) 
+d.ann <- d.ann %>% select(!ANKUNFTSZEIT) #Remove Time 
+d.ann <- d.ann %>% select(!ABFAHRTSZEIT) #Remove Time 
+
+d.ann.rv <-  d.ann %>% select(FAELLT_AUS_TF) # Response Variable
+d.ann.pred <-  d.ann %>% select(BETRIEBSTAG, LINIEN_TEXT,HALTESTELLEN_NAME) 
+# BEtriebstag, LinienText and Haltestellenname are the predictors for the model
+
+
+#Create Dummy Variables 
+dummies <- dummyVars(~ ., data = d.ann.pred)
+data_dummies <- predict(dummies, newdata = d.ann.pred)
+
+# Add one hot encoded predictors to RV
+d.ann.rdy <- bind_cols(d.ann.rv, data_dummies)
+
+```
+
+
+```{r Test and Train Data, echo =TRUE, cached=TRUE}
+set.seed(123)
+train_index <- createDataPartition(d.ann.rdy$FAELLT_AUS_TF, p = 0.8, list = FALSE)
+
+train <- d.ann.rdy[train_index, ]
+test <- d.ann.rdy[-train_index, ]
+
+# Make sure there are as much Cancelled as Non Cancelled observations in Train Data
+majority_class <- train[train$FAELLT_AUS_TF == FALSE, ]
+minority_class <- train[train$FAELLT_AUS_TF == TRUE, ]
+
+# Sample from majority class to match minority class size
+set.seed(123)
+majority_downsampled <- majority_class[sample(nrow(majority_class), nrow(minority_class)), ]
+
+# Combine minority class with downsampled majority class
+train_downsampled <- rbind(minority_class, majority_downsampled)
+
+# Shuffle rows 
+train_downsampled <- train_downsampled[sample(nrow(train_downsampled)), ]
+
+
+
+```
+
+## Building the Network
+
+Building the Network included a lot of trial and error. Because for many configurations the model did not converge. In the end 3 predictors could be found which lead to quite good prediction:
+
+- BETRIEBSTAG
+- LINIEN_TEXT
+- HALTESTELLEN_NAME
+
+
+
+```{r Build the network, echo=TRUE, cache =TRUE, eval=TRUE}
+
+
+set.seed(412)
+fealltaus_net <- nnet(FAELLT_AUS_TF ~  ., data = train_downsampled, size=15, maxit=500, range=0.1, decay=1e-4, MaxNWts = 10000)
+```
+
+```{r Plot NET, include =TRUE}
+plot(fealltaus_net)
+```
+
+## Results
+
+The model successfully predicts train cancellations using only three categorical predictors: **BETRIEBSTAG**, **LINIEN_TEXT**, and **HALTESTELLEN_NAME**. Despite the test data containing 80% uncancelled and 20% cancelled trains, the model performs well thanks to stratification and downsampling during training. These results suggest that these predictors are promising candidates for more detailed modeling and analysis.
+
+
+```{r Test the Network, include=TRUE}
+test.n.result <- test %>% select(-FAELLT_AUS_TF)
+pred <- predict(fealltaus_net, test.n.result, type="class")
+cm_nn <- table(pred=pred, true=test$FAELLT_AUS_TF)
+cm_nn
+
+confusionMatrix(as.factor(pred), as.factor(test$FAELLT_AUS_TF))
+
+```
 
 
 # Generalised Additive Models GAM
@@ -406,12 +581,22 @@ Despite strong precision for delays, the inability to reliably detect non-delays
 
 For future work, further adjustments addressing the class imbalance and a more refined threshold selection process may be necessary to enhance model reliability across both outcome classes.
 
+# Use of Generative AI
 
+ChatGPT can be a valuable tool for various aspects of programming, particularly for detecting syntax errors and generating initial plots quickly. It provides immediate feedback, making it easier for users to identify issues and visually present their data. This speed and convenience can help jump-start the coding process, especially for beginners or when exploring new concepts.
+
+However, there are limitations to relying solely on ChatGPT for more complex tasks. While it can help create basic plots, developing more specific or tailored visualizations often leads users down a “rabbit hole,” where time is spent refining the plot rather than focusing on the underlying analysis. Additionally, implementing modularity in code is challenging when using ChatGPT. It requires a deeper understanding of programming concepts to ensure code is reusable, maintainable, and efficient, which cannot always be achieved through AI-generated solutions alone.
+
+Another significant concern is that the code generated by ChatGPT is often done quickly, but it may lack proper documentation and clarity. Without adequate comments and explanations, the code can be difficult to read and understand, posing challenges for collaboration or future revisions. Furthermore, ChatGPT sometimes generates overly complex solutions when a simpler, more efficient approach could be used, which could be easily implemented with just a few lines of code if the programmer has a solid grasp of the task at hand.
+
+As data scientists, it is essential not only to understand the technical aspects of coding but also to gain a deep understanding of the data itself. Data analysis is a creative process that involves continuous iteration, exploration, and insight. To arrive at meaningful conclusions, data scientists must engage with domain experts and other stakeholders throughout the analysis process. This collaboration helps ensure that the results are accurate, relevant, and actionable, ultimately leading to well-informed decisions.
+
+In conclusion, while ChatGPT offers valuable assistance in coding, especially for quick debugging and basic tasks, it is important for users to ensure they understand their code thoroughly and the data they are working with. Achieving effective modularity, clarity, and efficiency requires a combination of technical expertise and creativity, with ongoing collaboration, to ensure the success of data analysis projects
 
 
 # Conclusion
 
-The analysis confirmed what Zentralbahn had likely anticipated: a **severe thunderstorm** caused substantial disruption to train operations, as documented in the official report on the reopening of the **Meiringen–Interlaken Ost** route on **November 25, 2024** ([source](https://www.zentralbahn.ch/de/kennenlernen/die-zentralbahn/einblicke/wiedereroeffnung-der-strecke-meiringen-interlaken-ost-am-25-november-2024)).
+The analysis confirmed what Zentralbahn had likely anticipated: a **severe thunderstorm** caused substantial disruption to train operations, as documented in the official report on the reopening of the **Meiringen–Interlaken Ost** route on **November 25, 2024**([source](https://www.zentralbahn.ch/de/kennenlernen/die-zentralbahn/einblicke/wiedereroeffnung-der-strecke-meiringen-interlaken-ost-am-25-november-2024)).
 
 In addition to this expected finding, several other valuable insights were uncovered through the application of various statistical models. Importantly, **the models developed can be used to predict delays under different operational conditions**, providing a foundation for proactive planning and decision-making.
 
