@@ -230,7 +230,11 @@ plot(fealltaus_net)
 
 ## Results
 
-The model successfully predicts train cancellations using only three categorical predictors: **BETRIEBSTAG**, **LINIEN_TEXT**, and **HALTESTELLEN_NAME**. Despite the test data containing 80% uncancelled and 20% cancelled trains, the model performs well thanks to stratification and downsampling during training. These results suggest that these predictors are promising candidates for more detailed modeling and analysis.
+The model successfully predicts train cancellations using only three categorical predictors: **BETRIEBSTAG**, **LINIEN_TEXT**, and **HALTESTELLEN_NAME**. Despite the test data containing 80% uncancelled and 20% cancelled trains, the model performs well thanks to stratification and downsampling during training. 
+
+Given this class imbalance, accuracy alone is not the most informative metric. Instead, specificity provides a more meaningful evaluation of the model’s ability to correctly identify cancelled trains. Encouragingly, the model attains a specificity of 95.43%, indicating reliable detection of cancellations within the cancelled train instances.
+
+These findings highlight that these predictors are valuable features and warrant further exploration through more detailed modeling and analysis.
 
 
 ```{r Test the Network, include=TRUE}
