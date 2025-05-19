@@ -4,13 +4,13 @@ subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport
 author: "Leonard, Stefan, Pascal"
 date: "17.05.2025"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: '3'
   html_document:
     toc: true
     toc_depth: 3
     toc_float: true
-  pdf_document:
-    toc: true
-    toc_depth: '3'
 ---
 
 
@@ -72,6 +72,8 @@ library(scales)
 library(nnet)
 library(gamlss.add)
 library(dplyr)
+library(mgcv)
+library(tidyr)
 library(ggplot2)
 library(caret)
 theme_set(theme_bw())
@@ -253,13 +255,6 @@ comparing weather-related predictors across all stations introduces variability 
 This allows for a more reliable interpretation of the relationship between weather conditions and train delays.
 
 ```{r gam-general-codes-subset, include=TRUE, echo=TRUE}
-# General codes
-library(dplyr)
-library(ggplot2)
-library(mgcv)
-library(tidyr)
-library(caret)
-
 
 #Creating subset
 
@@ -328,7 +323,7 @@ qqline(zb_final_subset$ABFAHRTDELAY_min, col = "lightblue")
 ```
 
 The QQ plots reveal that the response variables are right-skewed, which aligns with expectations. In real-world train operations, early arrivals or departures are relatively uncommon compared to delays. Moreover, the distribution indicates that longer delays occur less frequently than shorter ones, reflecting 
-typical delay patterns observed in Swiss public transportation.For this reason, we restrict our dataset for the 
+typical delay patterns observed in Swiss public transportation. For this reason, we restrict our dataset for the 
 GAM analysis to observations with delays between -2 and +4 minutes, aiming to ensure a distribution that more closely 
 approximates the Gaussian assumption required by the model.
 
