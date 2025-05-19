@@ -58,9 +58,9 @@ A secondary goal is to address known data quality issues in Zentralbahn’s inte
 
 - Investigating the **November 2024 dataset**, which is considered consistent and reliable,
 - Exploring the potential to **predict or classify missing train station values** using available variables such as timestamps, route IDs, or event sequences,
-- Developing a methodology that could later be applied to **recover and correct corrupted historical datasets**.¨
+- Developing a methodology that could later be applied to **recover and correct corrupted historical datasets**.
 
-# Report Structure!
+# Report Structure
 
 The following chapters present different approaches to modeling. The analysis begins with a general approach, using an initial artificial neural network (ANN) without extensive knowledge of the data. It then progresses toward more granular and detailed models. In the final chapter, the insights gained throughout the analysis are consolidated and integrated into a comprehensive model.
 
@@ -246,13 +246,12 @@ confusionMatrix(as.factor(pred), as.factor(test$FAELLT_AUS_TF))
 ```
 
 
-# Generalised Additive Models GAM
+# Generalised Additive Model
 
-In this project, we apply Generalized Additive Models (GAMs) to analyze the effects of various predictors on train delays, specifically focusing on the response variables ANKUNFTDELAY_min (arrival delay in minutes) and ABFAHRTDELAY_min (departure delay in minutes). 
+In this project, we apply Generalized Additive Models (GAM) to analyze the effects of various predictors on train delays, specifically focusing on the response variables ANKUNFTDELAY_min (arrival delay in minutes) and ABFAHRTDELAY_min (departure delay in minutes). 
 Due to the limited availability of continuous variables in our dataset these two delay metrics will be the response variables we will focus on.
-A key subset of our predictors is related to weather conditions. However, because the ZB Bahn railway line spans multiple climatic regions, 
+A key subset of our predictors is related to weather conditions. However, because the ZB railway line spans multiple climatic regions, 
 comparing weather-related predictors across all stations introduces variability that may obscure meaningful patterns. To address this, we restrict our analysis to a subset of stations located within the Lucerne region, where the climate is more uniform. 
-This allows for a more reliable interpretation of the relationship between weather conditions and train delays.
 
 ```{r gam-general-codes-subset, include=TRUE, echo=TRUE}
 
@@ -287,13 +286,17 @@ zb_final_subset <- zb_final_subset %>%
 
 sum(is.na(zb_final_subset$ABFAHRTDELAY_min)) #Checking if ABFAHRTDELAY_min NA is 0
 
+```
+
+
+```{r, include=FALSE}
 #Reducing the subbset just with the relevant columns
 
 zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_avg_c_Luzern)
 
 ```
 
-R assumes for GAM models usually the gaussian family for the response variables. Therefore, let's have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are gaussian distributed. 
+R assumes for GAM models usually the gaussian family for the response variables. Therefore, let's have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are Gaussian distributed. 
 
 ```{r first-histogram, include=TRUE, echo=TRUE}
 
@@ -308,24 +311,8 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 
 ```
 
-We see that both response variables are not normally distributed They seem to be right skewed. Lets check with the QQ plots. 
-
-```{r first-qqplot, include=TRUE, echo=TRUE}
-
-par(mfrow = c(1, 2))
-
-qqnorm(zb_final$ANKUNFTDELAY_min, main = "QQ Plot of ANKUNFTDELAY_min")
-qqline(zb_final$ANKUNFTDELAY_min, col = "lightblue")
-
-qqnorm(zb_final_subset$ABFAHRTDELAY_min, main = "QQ Plot of ABFAHRTDELAY_min")
-qqline(zb_final_subset$ABFAHRTDELAY_min, col = "lightblue")
-
-```
-
-The QQ plots reveal that the response variables are right-skewed, which aligns with expectations. In real-world train operations, early arrivals or departures are relatively uncommon compared to delays. Moreover, the distribution indicates that longer delays occur less frequently than shorter ones, reflecting 
-typical delay patterns observed in Swiss public transportation. For this reason, we restrict our dataset for the 
-GAM analysis to observations with delays between -2 and +4 minutes, aiming to ensure a distribution that more closely 
-approximates the Gaussian assumption required by the model.
+We see that both response variables are not normally distributed.
+In real-world train operations, early arrivals or departures are relatively uncommon compared to delays. Moreover, the distribution indicates that longer delays occur less frequently than shorter ones, reflecting typical delay patterns observed in Swiss public transportation. For this reason, we restrict our dataset for the GAM analysis to observations with delays between -2 and +4 minutes, aiming to ensure a distribution that more closely approximates the Gaussian assumption required by the model.
 
 ```{r second-histogram, include=TRUE, echo=TRUE}
 
