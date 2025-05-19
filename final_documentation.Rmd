@@ -377,6 +377,12 @@ Overall model performance:
 
 The adjusted R² value of 0.119 means that the model explains around 11.9% of the variation in departure delays. This suggests that the predictors included in the model have a measurable effect on delays, but a large part of the variation (around 88%) is still not accounted for. This can be considered as not unusual in real-world transportation data, where many factors that influence delays—such as technical problems, temporary disruptions, staffing issues or operational decisions—are not included in the dataset. While the model successfully identifies several statistically significant predictors, it also shows that more variables or more complex modeling approaches might be needed to better capture all the factors that contribute to departure delays.
 
+
+Conclusion:
+
+GAM analysis revealed that weather factors significantly impact train delays in the Lucerne region, aligning with the project’s goal to understand winter-related disruptions. However, the models capture only a small portion of the variability, suggesting further investigation is needed to fully explain performance bottlenecks.
+
+
 # Generalised Linear Model with family set to Binomial
 
 ```{r binary-codes-subset, include=TRUE, echo=TRUE}
