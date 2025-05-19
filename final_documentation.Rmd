@@ -252,7 +252,7 @@ confusionMatrix(as.factor(pred), as.factor(test$FAELLT_AUS_TF))
 
 # Generalised Additive Model
 
-In this project, we apply Generalized Additive Models (GAM) to analyze the effects of various predictors on train delays, specifically focusing on the response variables ANKUNFTDELAY_min (arrival delay in minutes) and ABFAHRTDELAY_min (departure delay in minutes). 
+In this project, we apply Generalized Additive Models (GAMs) to analyze the effects of various predictors on train delays, specifically focusing on the response variables ANKUNFTDELAY_min (arrival delay in minutes) and ABFAHRTDELAY_min (departure delay in minutes). 
 Due to the limited availability of continuous variables in our dataset these two delay metrics will be the response variables we will focus on.
 A key subset of our predictors is related to weather conditions. However, because the ZB railway line spans multiple climatic regions, 
 comparing weather-related predictors across all stations introduces variability that may obscure meaningful patterns. To address this, we restrict our analysis to a subset of stations located within the Lucerne region, where the climate is more uniform. 
@@ -300,7 +300,7 @@ zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTE
 
 ```
 
-R assumes for GAM models usually the gaussian family for the response variables. Therefore, let's have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are Gaussian distributed. 
+R assumes for GAM models the Gaussian family for the response variables. Therefore, let's have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are Gaussian distributed. 
 
 ```{r first-histogram, include=TRUE, echo=TRUE}
 
@@ -358,20 +358,23 @@ plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 2, main =
 ```
 
 Interpretation of Parametric Coefficients:
-The reference levels for the categorical predictors are evening for TAGESZEIT and EXT for LINIEN_TEXT. Under these baseline conditions (evening, 0°C, and 0 mm precipitation), the EXT line of Zentralbahn (ZB) in the Lucerne region has an average departure delay of approximately 1.25 minutes. 
 
-The effect of time of day is substantial; compared to the evening, trains during luncht time experience on average 0.30 minutes less delay, those in the afternoon 0.16 minutes less, during night operations 0.30 minutes less and in the morning 0.12 minutes less delay. 
+The reference levels for the categorical predictors are evening for TAGESZEIT and EXT for LINIEN_TEXT. Under these baseline conditions (evening, 0°C, and 0 mm precipitation), the EXT line of ZB in the Lucerne region has an average departure delay of approximately 1.25 minutes. 
 
-Regarding train lines, the IR line shows a reduction of 0.22 minutes compared to EXT, although this difference is not statistically significant (p = 0.5). In contrast, the PE line exhibits the largest reduction, with trains experiencing on average 2.32 minutes less delay than EXT, a difference that is statistically significant. Likewise, the S4, S41, S44, and S55 lines show significantly reduced delays compared to EXT, with reductions of 0.84, 1.35, 1.04, and 1.96 minutes, respectively, while the S5 line’s difference (0.51 minutes less) is not statistically significant.
+The effect of time of day is not substantial; compared to the evening, trains experience during the other times of the day on average 0.12 - 0.3 minutes less delays.
+
+Regarding train lines, the IR line shows a reduction of 0.22 minutes compared to EXT, although this difference is not statistically significant (p = 0.5). In contrast, the PE line exhibits the largest reduction, with trains experiencing on average 2.32 minutes less delay than EXT, a difference that is statistically significant. Likewise, the S4, S41, S44, and S55 lines show significantly reduced delays compared to EXT, with reductions of 0.84, 1.35, 1.04, and 1.96 minutes, respectively. The S5 line’s difference (0.51 minutes less) is not statistically significant.
 
 Interpretation of the Smooth Terms:
+
 The smooth term for average temperature has an estimated effective degrees of freedom (edf) of approximately 9, indicating a moderately complex non-linear relationship with departure delay. We have strong evidence that it is not 0 with a p-value < 0.05. The corresponding plot reveals that temperatures between 0 and 6°C have a stronger effect on departure delay, whereas between roughly 6–7°C and 8–10°C the effect is minimal. 
 
 Similarly, the smooth term for average precipitation (w_precip_mm_Luzern) has an edf of about 8.32, suggesting a moderately complex non-linear relationship. We have strong evidence that it is not 0 with a p-value < 0.05. 
 
 The precipitation plot shows a clear non-linear relationship between precipitation and departure delays. There is a strong effect at lower precipitation levels (up to approximately 20 mm), after which the curve flattens between around 22 mm and 50 mm, indicating a reduced impact on delays. One possible explanation for this flattening is that higher precipitation levels may coincide with times of reduced train activity—such as during the night—when fewer departures occur, thereby minimizing the observed effect on overall delays. Additionally, since the dataset only covers November 2024, it is possible that there were relatively few instances of heavy precipitation during this period in the Lucerne region, which may limit the model's ability to capture stronger effects at higher precipitation levels.
 
-Overall Model Performance:
+Overall model performance:
+
 The adjusted R² value of 0.119 means that the model explains around 11.9% of the variation in departure delays. This suggests that the predictors included in the model have a measurable effect on delays, but a large part of the variation (around 88%) is still not accounted for. This can be considered as not unusual in real-world transportation data, where many factors that influence delays—such as technical problems, temporary disruptions, staffing issues or operational decisions—are not included in the dataset. While the model successfully identifies several statistically significant predictors, it also shows that more variables or more complex modeling approaches might be needed to better capture all the factors that contribute to departure delays.
 
 # Generalised Linear Model with family set to Binomial
