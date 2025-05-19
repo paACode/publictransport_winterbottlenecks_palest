@@ -380,7 +380,7 @@ The adjusted R² value of 0.119 means that the model explains around 11.9% of th
 
 Conclusion:
 
-GAM analysis revealed that weather factors significantly impact train delays in the Lucerne region, aligning with the project’s goal to understand winter-related disruptions. However, the models capture only a small portion of the variability, suggesting further investigation is needed to fully explain performance bottlenecks.
+GAM analysis revealed that weather factors significantly impact train delays in the Lucerne region, aligning with the project’s goal to understand winter-related disruptions in November. However, the models capture only a small portion of the variability, suggesting further investigation is needed to fully explain performance bottlenecks.
 
 
 # Generalised Linear Model with family set to Binomial
@@ -457,7 +457,7 @@ zb_final_binominal %>%
 ```
 
 In this plot, we can see that the EXT line has the highest proportion of delayed trains, with approximately 40% of its services experiencing delays. The line with the second highest delay rate is the R71, where around 24% of trains are delayed. 
-On the other end of the spectrum, the S41 line shows the lowest delay rate, with only about 10% of its trains being delayed.
+On the other end of the spectrum, the S41 line shows the lowest delay rate, with only about 1% of its trains being delayed.
 
 
 To predict whether a train is delayed, we use a binomial logistic regression with Train_Delayed as the binary response variable and LINIEN_TEXT (train line) as the predictor. This model estimates how the probability of delay varies across different train lines.
