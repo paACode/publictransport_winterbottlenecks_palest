@@ -571,7 +571,7 @@ On the other hand, the negative predictive value is low at 4.7%, reflecting poor
 
 Balanced accuracy, which considers both sensitivity and specificity, is 49.9% suggesting the model performs no better than random guessing when it comes to balancing delay and non-delay predictions.
 
-The binomial Generalized Linear Model (GLM) successfully identifies line-specific vulnerabilities and the overall likelihood of train delays on the Zentralbahn network. Despite strong precision in predicting delays, the model struggles with accurately identifying non-delayed trains, largely due to class imbalance. This analysis provides a critical step towards understanding operational bottlenecks, but further refinement is needed to address specificity limitations. Targeted improvements, such as better class balancing and threshold optimization, could enhance model reliability and support Zentralbahn's goal of improving punctuality and service efficiency.
+The binomial GLM successfully identifies line-specific vulnerabilities and the overall likelihood of train delays on the Zentralbahn network. Despite strong precision in predicting delays, the model struggles with accurately identifying non-delayed trains, largely due to class imbalance. This analysis provides a critical step towards understanding operational bottlenecks, but further refinement is needed to address specificity limitations. Targeted improvements, such as better class balancing and threshold optimization, could enhance model reliability and support Zentralbahn's goal of improving punctuality and service efficiency.
 
 
 # Poisson Model
