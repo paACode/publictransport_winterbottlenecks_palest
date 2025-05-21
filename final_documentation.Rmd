@@ -2,7 +2,7 @@
 title: "Public Transport Winterbottlenecks"
 subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport_winterbottlenecks_palest)"
 author: "Leonard, Stefan, Pascal"
-date: "17.05.2025"
+date: "01.06.2025"
 output:
   html_document:
     toc: true
@@ -65,8 +65,10 @@ A secondary goal is to address known data quality issues in Zentralbahn’s inte
 To ensure a thorough and methodical exploration of different modeling approaches, responsibilities for leading the development of individual models were distributed among the team members. The allocation of model leadership was as follows:
 
 Leonard: Linear Model, Support Vector Machine
+
 Pascal: Generalised Linear Model (Poisson family), Neural Network
-Stefan:Generalised Additive Model, Generalised Linear Model (Binomial family)
+
+Stefan: Generalised Additive Model, Generalised Linear Model (Binomial family)
 
 While each team member took the lead on specific models, the entire team contributed actively to all stages of the project. From data preprocessing to model evaluation and interpretation, the collaborative approach ensured consistency, knowledge sharing, and a stronger overall outcome.
 
@@ -98,6 +100,8 @@ The data set has 91'271 entries which fulfills the requirement of the assessment
 
 
 While the table summarizes the original data types, some variables are adapted for specific models. `ANKUNFTDELAY_sec` and `ABFAHRTDELAY_sec`, though continuous, are treated as count data in the corresponding chapter where the model requires it. Similarly, `DELAY_Category` is transformed into a binomial variable for binary classification tasks.
+
+All public transport data used in this project was obtained from OpenTransportData, which provides official, high-resolution datasets on public transportation in Switzerland. Weather-related data was sourced from XXX, offering location-specific historical weather records relevant to the operational context.
 
 
 The following chapters present different approaches to modeling. The analysis begins with a general approach, using an initial artificial neural network (ANN) without extensive knowledge of the data. It then progresses toward more granular and detailed models. In the final chapter, the insights gained throughout the analysis are consolidated and integrated into a comprehensive model.
