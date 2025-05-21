@@ -4,13 +4,13 @@ subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport
 author: "Leonard, Stefan, Pascal"
 date: "17.05.2025"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: '3'
   html_document:
     toc: true
     toc_depth: 3
     toc_float: true
+  pdf_document:
+    toc: true
+    toc_depth: '3'
 ---
 
 
@@ -335,7 +335,9 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 
 ```
 
-The histogram indicates an approximately normal distribution. Therefore, the dataset is now suitable for fitting with Generalized Additive Models (GAMs).
+The histogram indicates an approximately normal distribution. Therefore, the dataset is now suitable for fitting with GAMs.
+
+As a first step, we will explore how the average temperature in Lucerne affects arrival delays of trains.
 
 ```{r gam-Ankunft-temp, include=TRUE, echo=FALSE}
 
@@ -345,7 +347,11 @@ summary (gam_Ankunft_temp)
 
 ```
 
-The p-value associated with the smooth term is close to zero, providing strong evidence that the average temperature in Lucerne has a statistically significant effect on arrival delays. The estimated effective degrees of freedom (edf ≈ 9) suggest a moderately complex, non-linear relationship. However, the adjusted R-squared value of 0.036 and the explained deviance of only 3.67% indicate that the model captures only a small portion of the variation in arrival delays. Thus, while the effect is significant, temperature alone does not explain much of the delay variability.
+The p-value associated with the smooth term is close to zero, providing strong evidence that the average temperature in Lucerne has a statistically significant effect on arrival delays. The estimated effective degrees of freedom (edf ≈ 9) suggest a moderately complex, non-linear relationship. However, the adjusted R-squared value of 0.036 and the explained deviance of only 3.67% indicate that the model captures only a small portion of the variation in arrival delays. Thus, while the effect is significant, temperature alone does not explain much of the delay variability. 
+
+This is why will proceed with a more detailed analysis and explore how time of day, train lines average temperature and precipitation affect departure delays of trains.
+
+Interpretation of Parametric Coefficients:
 
 ```{r gam-temp-precip-tageszeit-linien_text, include=TRUE, echo=FALSE}
 
@@ -353,11 +359,7 @@ gam_temp_precip_tageszeit_linien_text <- gam(ABFAHRTDELAY_min ~ TAGESZEIT + LINI
 
 summary(gam_temp_precip_tageszeit_linien_text)
 
-plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 1,main = "Effect of Temperature on Departure Delay")
-plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 2, main = "Effect of Precipitation on Departure Delay")
 ```
-
-Interpretation of Parametric Coefficients:
 
 The reference levels for the categorical predictors are evening for TAGESZEIT and EXT for LINIEN_TEXT. Under these baseline conditions (evening, 0°C, and 0 mm precipitation), the EXT line of ZB in the Lucerne region has an average departure delay of approximately 1.25 minutes. 
 
@@ -367,7 +369,16 @@ Regarding train lines, the IR line shows a reduction of 0.22 minutes compared to
 
 Interpretation of the Smooth Terms:
 
+```{r effect_temperature_depature_delay, include=TRUE, echo=FALSE}
+plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 1,main = "Effect of Temperature on Departure Delay")
+
+```
+
 The smooth term for average temperature has an estimated effective degrees of freedom (edf) of approximately 9, indicating a moderately complex non-linear relationship with departure delay. We have strong evidence that it is not 0 with a p-value < 0.05. The corresponding plot reveals that temperatures between 0 and 6°C have a stronger effect on departure delay, whereas between roughly 6–7°C and 8–10°C the effect is minimal. 
+
+```{r effect_percipitation_depature_delay, include=TRUE, echo=FALSE}
+plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 2, main = "Effect of Precipitation on Departure Delay")
+```
 
 Similarly, the smooth term for average precipitation (w_precip_mm_Luzern) has an edf of about 8.32, suggesting a moderately complex non-linear relationship. We have strong evidence that it is not 0 with a p-value < 0.05. 
 
