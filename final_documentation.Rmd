@@ -4,13 +4,13 @@ subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport
 author: "Leonard, Stefan, Pascal"
 date: "17.05.2025"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: '3'
   html_document:
     toc: true
     toc_depth: 3
     toc_float: true
-  pdf_document:
-    toc: true
-    toc_depth: '3'
 ---
 
 
@@ -257,7 +257,7 @@ Due to the limited availability of continuous variables in our dataset these two
 A key subset of our predictors is related to weather conditions. However, because the ZB railway line spans multiple climatic regions, 
 comparing weather-related predictors across all stations introduces variability that may obscure meaningful patterns. To address this, we restrict our analysis to a subset of stations located within the Lucerne region, where the climate is more uniform. 
 
-```{r gam-general-codes-subset, include=TRUE, echo=TRUE}
+```{r gam-general-codes-subset, include=FALSE, echo=FALSE}
 
 #Creating subset
 
@@ -302,7 +302,7 @@ zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTE
 
 R assumes for GAM models the Gaussian family for the response variables. Therefore, let's have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are Gaussian distributed. 
 
-```{r first-histogram, include=TRUE, echo=TRUE}
+```{r first-histogram, include=TRUE, echo=FALSE}
 
 par(mfrow = c(1, 2))
 
@@ -318,7 +318,7 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 We see that both response variables are not normally distributed.
 In real-world train operations, early arrivals or departures are relatively uncommon compared to delays. Moreover, the distribution indicates that longer delays occur less frequently than shorter ones, reflecting typical delay patterns observed in Swiss public transportation. For this reason, we restrict our dataset for the GAM analysis to observations with delays between -2 and +4 minutes, aiming to ensure a distribution that more closely approximates the Gaussian assumption required by the model.
 
-```{r second-histogram, include=TRUE, echo=TRUE}
+```{r second-histogram, include=TRUE, echo=FALSE}
 
 par(mfrow = c(1, 2))
 
@@ -337,7 +337,7 @@ hist(zb_final_subset$ABFAHRTDELAY_min, main = "Histogram of ABFAHRTDELAY_min", x
 
 The histogram indicates an approximately normal distribution. Therefore, the dataset is now suitable for fitting with Generalized Additive Models (GAMs).
 
-```{r gam-Ankunft-temp, include=TRUE, echo=TRUE}
+```{r gam-Ankunft-temp, include=TRUE, echo=FALSE}
 
 gam_Ankunft_temp <- gam(ANKUNFTDELAY_min ~ s(w_temp_avg_c_Luzern), data = zb_final_subset) 
 
@@ -347,7 +347,7 @@ summary (gam_Ankunft_temp)
 
 The p-value associated with the smooth term is close to zero, providing strong evidence that the average temperature in Lucerne has a statistically significant effect on arrival delays. The estimated effective degrees of freedom (edf ≈ 9) suggest a moderately complex, non-linear relationship. However, the adjusted R-squared value of 0.036 and the explained deviance of only 3.67% indicate that the model captures only a small portion of the variation in arrival delays. Thus, while the effect is significant, temperature alone does not explain much of the delay variability.
 
-```{r gam-temp-precip-tageszeit-linien_text, include=TRUE, echo=TRUE}
+```{r gam-temp-precip-tageszeit-linien_text, include=TRUE, echo=FALSE}
 
 gam_temp_precip_tageszeit_linien_text <- gam(ABFAHRTDELAY_min ~ TAGESZEIT + LINIEN_TEXT + s(w_temp_avg_c_Luzern) + s(w_precip_mm_Luzern), data = zb_final_subset) 
 
@@ -387,7 +387,7 @@ GAM analysis revealed that weather factors significantly impact train delays in 
 
 To further investigate the factors influencing train delays on the Zentralbahn network, a Generalized Linear Model (GLM) with a binomial family is applied. This model aims to predict the likelihood of a train being delayed based on key operational variables, including train line and rush hour status. By classifying delays as a binary outcome, the analysis provides deeper insights into line-specific vulnerabilities and the broader operational challenges faced during peak travel times. This contributes to the project’s overarching goal of identifying root causes of performance bottlenecks and improving punctuality through data-driven strategies.
 
-```{r binary-codes-subset, include=TRUE, echo=TRUE}
+```{r binary-codes-subset, include=FALSE, echo=FALSE}
 
 zb_final <- read.csv("data/zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
 
@@ -445,7 +445,7 @@ zb_final_binominal$Train_Delayed <- as.numeric(zb_final_binominal$Train_Delayed)
 
 ```
 
-```{r first-plotting, include=TRUE, echo=TRUE}
+```{r first-plotting, include=TRUE, echo=FALSE}
 #Plotting the data
 
 zb_final_binominal %>%
@@ -464,7 +464,7 @@ On the other end of the spectrum, the S41 line shows the lowest delay rate, with
 
 To predict whether a train is delayed, we use a binomial GLM with Train_Delayed as the binary response variable and LINIEN_TEXT (train line) as the predictor. This model estimates how the probability of delay varies across different train lines.
 
-```{r glm-delay, include=TRUE, echo=TRUE}
+```{r glm-delay, include=TRUE, echo=FALSE}
 
 glm_delay <- glm(Train_Delayed ~ LINIEN_TEXT, family = "binomial", data = zb_final_binominal)
 
@@ -482,7 +482,7 @@ a statistically significant impact on whether a train is delayed or not. This is
 the second-highest probability of delay, with an average delay of around 24%.
 The reason for this contradiction could be that while the R71 line might often experience delays, the variance of the delays might be quite narrow. To explore this, let's take a look at the boxplot of the train delays by line.
 
-```{r boxplot-ANKUNFTDELAY_min-LINIEN_TEXT, include=TRUE, echo=TRUE}
+```{r boxplot-ANKUNFTDELAY_min-LINIEN_TEXT, include=TRUE, echo=FALSE}
 
 boxplot(ANKUNFTDELAY_min ~ LINIEN_TEXT , data = zb_final_binominal)
 
@@ -495,7 +495,7 @@ Although R71 has a relatively high average delay, this does not necessarily impl
 
 Lets have now a look at the coefficients of glm_delay
 
-```{r exp-coef-glm-delay, include=TRUE, echo=TRUE}
+```{r exp-coef-glm-delay, include=TRUE, echo=FALSE}
 
 exp(coef(glm_delay)) %>% round(digits=2)
 
@@ -532,7 +532,7 @@ ggplot(simulated_data, aes(x = reorder(LINIEN_TEXT, predicted_prob), y = predict
 ```
 
 
-```{r summary-simulated-data, include=TRUE, echo=TRUE}
+```{r summary-simulated-data, include=TRUE, echo=FALSE}
 
 summary(simulated_data)
 
@@ -542,7 +542,7 @@ The mean of the simulated data is 0.105. This is the reason why we cannot take a
 
 Several thresholds were tested to determine the optimal cut-off point for classifying delays based on the predicted probabilities. Thresholds such as 0.03, 0.08, and 0.1 were evaluated, but they either led to a very low specificity or poor sensitivity. A threshold of 0.2 appeared to offer the most reasonable trade-off between correctly identifying delayed trains (sensitivity) and avoiding false delay predictions (specificity), making it the most balanced choice for this model.
 
-```{r confusion-matrix-simulated-data, include=TRUE, echo=TRUE}
+```{r confusion-matrix-simulated-data, include=TRUE, echo=FALSE}
 # Discretize the simulated data
 simulated_data$simulated_delay <- ifelse(simulated_data$predicted_prob > 0.2, 1, 0)
 
