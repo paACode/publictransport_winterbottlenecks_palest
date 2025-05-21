@@ -62,6 +62,44 @@ A secondary goal is to address known data quality issues in Zentralbahn’s inte
 
 # Report Structure
 
+To ensure a thorough and methodical exploration of different modeling approaches, responsibilities for leading the development of individual models were distributed among the team members. The allocation of model leadership was as follows:
+
+Leonard: Linear Model, Support Vector Machine
+Pascal: Generalised Linear Model (Poisson family), Neural Network
+Stefan:Generalised Additive Model, Generalised Linear Model (Binomial family)
+
+While each team member took the lead on specific models, the entire team contributed actively to all stages of the project. From data preprocessing to model evaluation and interpretation, the collaborative approach ensured consistency, knowledge sharing, and a stronger overall outcome.
+
+The data set has 91'271 entries which fulfills the requirement of the assessment. On the one hand, data set contained already a wide range of data types. On the other hand, we had to add further columns in order to fullfil the requirement. The data set has the following data types:
+
+| **Column**                 | **Data Type** |
+|---------------------------|---------------|
+| `BETRIEBSTAG`             | Categorical   |
+| `LINIEN_TEXT`             | Categorical   |
+| `HALTESTELLEN_NAME`       | Categorical   |
+| `ANKUNFTSZEIT`            | Datetime      |
+| `AN_PROGNOSSE`            | Datetime      |
+| `ANKUNFTDELAY_sec`        | Continuous    |
+| `ABFAHRTZEIT`             | Datetime      |
+| `AB_PROGNOSSE`            | Datetime      |
+| `ABFAHRTDELAY_sec`        | Continuous    |
+| `DELAY_Category`          | Categorical   |
+| `TAGESZEIT`               | Categorical   |
+| `RUSH_HOUR`               | Categorical   |
+| `w_precip_mm_Engelberg`   | Continuous    |
+| `w_precip_mm_Luzern`      | Continuous    |
+| `w_precip_mm_Meiringen`   | Continuous    |
+| `w_temp_min_c_Engelberg`  | Continuous    |
+| `w_temp_min_c_Luzern`     | Continuous    |
+| `w_temp_min_c_Meiringen`  | Continuous    |
+| `w_temp_avg_c_Engelberg`  | Continuous    |
+| `w_temp_avg_c_Luzern`     | Continuous    |
+| `w_temp_avg_c_Meiringen`  | Continuous    |
+
+
+While the table summarizes the original data types, some variables are adapted for specific models. `ANKUNFTDELAY_sec` and `ABFAHRTDELAY_sec`, though continuous, are treated as count data in the corresponding chapter where the model requires it. Similarly, `DELAY_Category` is transformed into a binomial variable for binary classification tasks.
+
+
 The following chapters present different approaches to modeling. The analysis begins with a general approach, using an initial artificial neural network (ANN) without extensive knowledge of the data. It then progresses toward more granular and detailed models. In the final chapter, the insights gained throughout the analysis are consolidated and integrated into a comprehensive model.
 
 
