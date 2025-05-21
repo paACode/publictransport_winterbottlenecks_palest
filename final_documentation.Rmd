@@ -349,7 +349,7 @@ summary (gam_Ankunft_temp)
 
 The p-value associated with the smooth term is close to zero, providing strong evidence that the average temperature in Lucerne has a statistically significant effect on arrival delays. The estimated effective degrees of freedom (edf ≈ 9) suggest a moderately complex, non-linear relationship. However, the adjusted R-squared value of 0.036 and the explained deviance of only 3.67% indicate that the model captures only a small portion of the variation in arrival delays. Thus, while the effect is significant, temperature alone does not explain much of the delay variability. 
 
-This is why will proceed with a more detailed analysis and explore how time of day, train lines average temperature and precipitation affect departure delays of trains.
+This is why will proceed with a more detailed analysis and explore how time of day, train lines, average temperature and precipitation affect departure delays of trains.
 
 Interpretation of Parametric Coefficients:
 
@@ -363,7 +363,7 @@ summary(gam_temp_precip_tageszeit_linien_text)
 
 The reference levels for the categorical predictors are evening for TAGESZEIT and EXT for LINIEN_TEXT. Under these baseline conditions (evening, 0°C, and 0 mm precipitation), the EXT line of ZB in the Lucerne region has an average departure delay of approximately 1.25 minutes. 
 
-The effect of time of day is not substantial; compared to the evening, trains experience during the other times of the day on average 0.12 - 0.3 minutes less delays.
+The time of day has a statistically significant effect on departure delays. Compared to the evening (the reference category), trains departing at other times of day experience between 0.12 and 0.30 minutes less delay on average. These differences are highly significant, as indicated by the very small p-values (all p < 0.0001), suggesting strong evidence that delays vary by time of day.
 
 Regarding train lines, the IR line shows a reduction of 0.22 minutes compared to EXT, although this difference is not statistically significant (p = 0.5). In contrast, the PE line exhibits the largest reduction, with trains experiencing on average 2.32 minutes less delay than EXT, a difference that is statistically significant. Likewise, the S4, S41, S44, and S55 lines show significantly reduced delays compared to EXT, with reductions of 0.84, 1.35, 1.04, and 1.96 minutes, respectively. The S5 line’s difference (0.51 minutes less) is not statistically significant.
 
