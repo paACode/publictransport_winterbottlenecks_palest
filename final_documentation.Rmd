@@ -287,7 +287,6 @@ These findings highlight that these predictors are valuable features and warrant
 test.n.result <- test %>% select(-FAELLT_AUS_TF)
 pred <- predict(fealltaus_net, test.n.result, type="class")
 cm_nn <- table(pred=pred, true=test$FAELLT_AUS_TF)
-cm_nn
 
 confusionMatrix(as.factor(pred), as.factor(test$FAELLT_AUS_TF))
 
