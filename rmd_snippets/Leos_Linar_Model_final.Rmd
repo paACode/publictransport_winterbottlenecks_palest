@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## 1 Getting the data
 ```{r import data}
-d.trains <- read.csv("zentrahlbahn_final.csv",
+d.trains <- read.csv("../data/zentrahlbahn_final.csv",
                      header = TRUE,
                      stringsAsFactors = TRUE)
 ##
