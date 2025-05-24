@@ -99,7 +99,7 @@ While the table summarizes the original data types, some variables are adapted f
 
 Similarly, `DELAY_Category` is transformed into a binomial variable for binary classification tasks.
 
-All public transport data used in this project was obtained from OpenTransportData, which provides official, high-resolution datasets on public transportation in Switzerland. Weather-related data was sourced from XXX, offering location-specific historical weather records relevant to the operational context.
+All public transport data used in this project was obtained from [OpenTransportData](https://archive.opentransportdata.swiss/actual_data_archive.htm), which provides official, high-resolution datasets on public transportation in Switzerland. Weather-related data was sourced from [Swiss Federal Geoportal](https://data.geo.admin.ch), offering location-specific historical weather records relevant to the operational context.
 
 
 The following chapters present different approaches to modeling. The analysis begins with a general approach, using an initial artificial neural network (ANN) without extensive knowledge of the data. It then progresses toward more granular and detailed models. In the final chapter, the insights gained throughout the analysis are consolidated and integrated into a comprehensive model.
@@ -510,7 +510,7 @@ summary(glm_delay)
 ```
 
 The number of Fisher Scoring iterations is 7, which is an acceptable value.
-The dispersion parameter in the model was calculated by dividing the residual deviance (21375) by the residual degrees of freedom (57209), yielding a value of 0.374. This value, being less than 1, indicates that there is no overdispersion in the data. Therefore, the binomial model is an appropriate fit for the dataset, and no adjustments for overdispersion are necessary.
+The dispersion parameter in the model was calculated by dividing the residual deviance (21375) by the residual degrees of freedom (57209), yielding a value of 0.374. This value, being less than 1, indicates that there is no overdispersion in the data. Therefore, the binomial logistic regression is an appropriate fit for the dataset, and no adjustments for overdispersion are necessary.
 
 On one hand, the p-values for almost all the train lines are very small, indicating that the train lines have a statistically significant effect on whether a train is delayed or not. Since the coefficients for the train lines are negative, it suggests that the different train lines have a lower likeliness of being delayed compared to the baseline train line.
 
@@ -608,7 +608,7 @@ On the other hand, the negative predictive value is low at 4.7%, reflecting poor
 
 Balanced accuracy, which considers both sensitivity and specificity, is 49.9% suggesting the model performs no better than random guessing when it comes to balancing delay and non-delay predictions.
 
-The binomial GLM successfully identifies line-specific vulnerabilities and the overall likelihood of train delays on the Zentralbahn network. Despite strong precision in predicting delays, the model struggles with accurately identifying non-delayed trains, largely due to class imbalance. This analysis provides a critical step towards understanding operational bottlenecks, but further refinement is needed to address specificity limitations. Targeted improvements, such as better class balancing and threshold optimization, could enhance model reliability and support Zentralbahn's goal of improving punctuality and service efficiency.
+The binomial GLM successfully identifies line-specific vulnerabilities and the overall likelihood of train delays on the Zentralbahn network. Despite strong precision in predicting delays, the model struggles to accurately identify non-delayed trains, largely due to class imbalance. This analysis provides a critical step towards understanding operational bottlenecks, but further refinement is needed to address specificity limitations. Targeted improvements, such as better class balancing and threshold optimization, could enhance model reliability and support Zentralbahn's goal of improving punctuality and service efficiency.
 
 
 # Poisson Model
