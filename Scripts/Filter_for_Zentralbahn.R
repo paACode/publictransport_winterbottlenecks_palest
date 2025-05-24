@@ -57,7 +57,13 @@ View(zb_final)
 
 # Create a backup of the original file
 
-write.csv(zb_final, "data/zb_final_backup.csv", row.names = FALSE)
+write.csv(zb_final, "data/zentrahlbahn_final_backup.csv", row.names = FALSE)
+
+zb_final_backup <- read.csv("data/zentrahlbahn_final_backup.csv", header = TRUE, stringsAsFactors = TRUE)
+
+str(zb_final_backup)
+
+View(zb_final_backup)
 
 # Select only the relevant columns
 # These are the columns you specified in your request
@@ -79,11 +85,15 @@ zb_final_reduced <- zb_final %>%
     RUSH_HOUR,
     w_precip_mm_Luzern,
     w_temp_min_c_Luzern,
-    w_temp_avg_c_Luzern
+    w_temp_avg_c_Luzern,
+    FAELLT_AUS_TF
   )
 
 # Overwrite the original file with the reduced version
 write.csv(zb_final_reduced, "data/zentrahlbahn_final.csv", row.names = FALSE)
+
+
+
 
 
 

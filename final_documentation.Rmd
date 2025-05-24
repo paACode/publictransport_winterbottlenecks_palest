@@ -88,15 +88,9 @@ The data set has 91'271 entries which fulfills the requirement of the assessment
 | `DELAY_Category`          | Categorical   |
 | `TAGESZEIT`               | Categorical   |
 | `RUSH_HOUR`               | Categorical   |
-| `w_precip_mm_Engelberg`   | Continuous    |
 | `w_precip_mm_Luzern`      | Continuous    |
-| `w_precip_mm_Meiringen`   | Continuous    |
-| `w_temp_min_c_Engelberg`  | Continuous    |
 | `w_temp_min_c_Luzern`     | Continuous    |
-| `w_temp_min_c_Meiringen`  | Continuous    |
-| `w_temp_avg_c_Engelberg`  | Continuous    |
 | `w_temp_avg_c_Luzern`     | Continuous    |
-| `w_temp_avg_c_Meiringen`  | Continuous    |
 
 
 While the table summarizes the original data types, some variables are adapted for specific models. `ANKUNFTDELAY_sec` and `ABFAHRTDELAY_sec`, though continuous, are treated as count data in the corresponding chapter where the model requires it. These variables are easily convertible by focusing solely on positive delay values and ignoring early arrivals or departures.
