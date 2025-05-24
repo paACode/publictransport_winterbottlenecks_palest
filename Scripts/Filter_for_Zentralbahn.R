@@ -46,3 +46,46 @@ summary(zb_final_subset$HALTESTELLEN_NAME)
 
 View(zb_final_subset)
 
+
+## Reducing columns to fit the requirement ----
+
+zb_final <- read.csv("data/zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
+
+str(zb_final)
+
+View(zb_final)
+
+# Create a backup of the original file
+
+write.csv(zb_final, "data/zb_final_backup.csv", row.names = FALSE)
+
+# Select only the relevant columns
+# These are the columns you specified in your request
+zb_final_reduced <- zb_final %>%
+  select(
+    BETRIEBSTAG,
+    LINIEN_TEXT,
+    HALTESTELLEN_NAME,
+    ANKUNFTSZEIT,
+    AN_PROGNOSE,         
+    ANKUNFTDELAY_sec,    
+    ABFAHRTSZEIT,
+    AB_PROGNOSE,
+    ABFAHRTDELAY_sec,
+    START,
+    ZIEL,
+    Delay_Category,     
+    TAGESZEIT,
+    RUSH_HOUR,
+    w_precip_mm_Luzern,
+    w_temp_min_c_Luzern,
+    w_temp_avg_c_Luzern
+  )
+
+# Overwrite the original file with the reduced version
+write.csv(zb_final_reduced, "data/zentrahlbahn_final.csv", row.names = FALSE)
+
+
+
+
+

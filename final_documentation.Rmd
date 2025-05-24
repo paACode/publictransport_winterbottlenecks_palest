@@ -134,10 +134,9 @@ Therefore, the approach directly attempts to predict whether a train is cancelle
 
 
 - `AN_PROGNOSE` and `AB_PROGNOSE`: Always `NA` when a train is cancelled
-- `AN_PROGNOSE_STATUS` and `AB_PROGNOSE_STATUS`: Always `"UNBEKANNT"` when cancelled
 - All derived columns such as:
-  - `ABFAHRTDELAY_sec`, `ABFAHRTDELAY_min`
-  - `ANKUNFTDELAY_sec`, `ANKUNFTDELAY_min`
+  - `ABFAHRTDELAY_sec`,
+  - `ANKUNFTDELAY_sec`,
   - `RUSH_HOUR`, `TAGESZEIT`, `DELAY_CATEGORY`
   - `ZIEL`, `START`
   
@@ -146,11 +145,10 @@ These variables are excluded to avoid data leakage.
 
 ```{r Read Data}
 #### Read in Data ####----------------------------------------------------------
-v.to.drop <- c("AN_PROGNOSE", "AN_PROGNOSE_STATUS", "AB_PROGNOSE",
-               "AB_PROGNOSE_STATUS",
-               "ABFAHRTDELAY_sec", "ABFAHRTDELAY_min",
-               "ANKUNFTDELAY_sec", "ANKUNFTDELAY_min", "TAGESZEIT", 
-               "RUSH_HOUR", "Delay_Category", "ZIEL", "START", "FAHRT_BEZEICHNER"
+v.to.drop <- c("AN_PROGNOSE", "AB_PROGNOSE",
+               "ABFAHRTDELAY_sec",
+               "ANKUNFTDELAY_sec", "TAGESZEIT", 
+               "RUSH_HOUR", "Delay_Category", "ZIEL", "START"
 )
 
 d.ann<- read.csv("data/zentrahlbahn_final.csv") %>% 
@@ -335,14 +333,6 @@ sum(is.na(zb_final_subset$ABFAHRTDELAY_min)) #Checking if ABFAHRTDELAY_min NA is
 
 ```
 
-
-```{r, include=FALSE}
-#Reducing the subbset just with the relevant columns
-
-zb_final_subset <- zb_final_subset %>% select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, ABFAHRTSZEIT, AB_PROGNOSE, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, TAGESZEIT, RUSH_HOUR, w_precip_mm_Luzern, w_temp_avg_c_Luzern)
-
-```
-
 R assumes for GAM models the Gaussian family for the response variables. Therefore, let's have a look if the response variables ANKUNFTDELAY_min and ABFAHRTDELAY_min are Gaussian distributed. 
 
 ```{r first-histogram, include=TRUE, echo=FALSE}
@@ -477,9 +467,6 @@ zb_final_binominal <- zb_final_binominal %>%
     ABFAHRTDELAY_min = ABFAHRTDELAY_sec / 60,
     ANKUNFTDELAY_min = ANKUNFTDELAY_sec / 60
   )
-
-#Reducing the subset with only relevant columns
-zb_final_binominal <- zb_final_binominal %>% select(BETRIEBSTAG, LINIEN_TEXT, FAELLT_AUS_TF, HALTESTELLEN_NAME, ANKUNFTSZEIT, AN_PROGNOSE, AN_PROGNOSE_STATUS, ABFAHRTSZEIT, AB_PROGNOSE, AB_PROGNOSE_STATUS, ABFAHRTDELAY_min, ANKUNFTDELAY_min, Delay_Category, Train_Delayed, TAGESZEIT, RUSH_HOUR, Train_RUSH_HOUR)
 
 
 #Removing rows NA in ANKUNFTDELAY_min
