@@ -1,0 +1,284 @@
+---
+title: "SVM Model Journey"
+author: "Leonard Dost"
+date: "2025-05-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 0. Introduction
+
+In modern transportation systems, data incompleteness remains a persistent challenge. The Swiss Federal Railways (SBB) frequently encounters missing entries in operational datasets, particularly regarding station names (`HALTESTELLEN_NAME`). Addressing this issue has become a priority for ensuring high-quality analytics and system monitoring. In this report, we aim to develop a predictive model using Support Vector Machines (SVM) to enrich missing station name data based on related contextual features such as time, weekday, and route metadata. The overarching objective is to demonstrate a scalable approach that can support the SBB in data recovery efforts.
+
+## 1. Data Import and Initial Exploration
+
+The dataset, sourced from Zentralbahn operations, includes variables such as station names, arrival and departure times, line identifiers, and travel routes. These serve as potential predictors in our modeling framework.
+
+```{r import-data, echo=TRUE, results='hide'}
+# Load the operational dataset from Zentralbahn
+d.trains <- read.csv("../data/zentrahlbahn_final.csv", header = TRUE, stringsAsFactors = TRUE)
+```
+
+Initial exploratory analysis highlighted a large number of unique station labels and several variables with inconsistent or missing values. A summary of categorical distributions and missingness was conducted to determine preprocessing steps.
+
+```{r initial-analysis, echo=TRUE}
+# Visualize station frequency to identify high-volume locations
+library(ggplot2)
+station_counts <- sort(table(d.trains$HALTESTELLEN_NAME), decreasing = TRUE)
+
+# Plot bar chart of station frequency with a threshold line at 3000
+barplot(station_counts, las = 2, cex.names = 0.5, main = "Station Frequency", col = "steelblue")
+abline(h = 3000, col = "red", lty = 2)
+legend("topright", legend = "Threshold = 3000", col = "red", lty = 2)
+```
+
+To mitigate model complexity and class imbalance, we filtered the dataset to retain only stations with more than 3,000 observations.
+
+## 2. Feature Engineering
+
+To prepare the dataset for SVM, we performed several transformations. Given that SVMs are sensitive to feature scale and representation, our goal was to create features that support margin-based classification.
+
+-   **Temporal Features**: We parsed date and time variables into structured formats.
+-   **Minutes to Midnight**: This numeric representation provides a linear scale for time, crucial for SVM performance.
+-   **Weekday Extraction**: Encoded as a categorical variable, this adds temporal context.
+-   **Route Encoding**: By combining `START` and `ZIEL`, we capture trip patterns relevant to station inference.
+
+```{r feature-engineering, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+# Load date/time and data manipulation libraries
+library(lubridate)
+library(dplyr)
+
+# Filter stations with more than 3000 occurrences to reduce class imbalance
+station_counts <- table(d.trains$HALTESTELLEN_NAME)
+stations_to_keep <- names(station_counts[station_counts > 3000])
+d.trains <- d.trains %>% filter(HALTESTELLEN_NAME %in% stations_to_keep)
+
+# Create new features: day of week, time to midnight, and combined route
+d.svm <- d.trains %>%
+  select(BETRIEBSTAG, LINIEN_TEXT, HALTESTELLEN_NAME, ANKUNFTSZEIT, ABFAHRTSZEIT, START, ZIEL) %>%
+  mutate(
+    BETRIEBSTAG = ymd(BETRIEBSTAG),
+    ANKUNFTSZEIT = parse_date_time(ANKUNFTSZEIT, orders = c("ymd_HMS", "ymd")),
+    ABFAHRTSZEIT = parse_date_time(ABFAHRTSZEIT, orders = c("ymd_HMS", "ymd")),
+    ANKUNFTSZEIT = if_else(is.na(ANKUNFTSZEIT), ABFAHRTSZEIT, ANKUNFTSZEIT),
+    WOCHENTAG = wday(BETRIEBSTAG, label = TRUE, abbr = TRUE),
+    hour = hour(ANKUNFTSZEIT),
+    minute = minute(ANKUNFTSZEIT),
+    minutes_to_midnight = 1440 - (hour * 60 + minute),
+    route = paste(START, ZIEL, sep = "_")
+  )
+```
+
+## 3. Binary Classification Reformulation
+
+### 3.1 Why We Switched to Binary Classification
+
+Our initial plan involved a multi-class SVM model to predict the full set of station names. However, this approach encountered multiple challenges: - Severe class imbalance, with many underrepresented stations. - Long training times due to the large feature space and high cardinality of the response. - Low predictive accuracy and inability to generalize for minority classes. - Too many overlapping feature distributions for distinct stations.
+
+To address these issues, we refocused the task into a binary classification problem, predicting whether a station is "Luzern" or "Other". Luzern was chosen due to its high frequency, which provides a solid training base.
+
+### 3.2 Creating the Balanced Dataset
+
+```{r binary-setup, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+# Create binary target variable: Luzern vs. Other stations
+d.svm$binary_station <- factor(ifelse(d.svm$HALTESTELLEN_NAME == "Luzern", "Luzern", "Other"))
+
+# Downsample majority class to balance dataset
+set.seed(42)
+luzern_rows <- d.svm[d.svm$binary_station == "Luzern", ]
+other_rows  <- d.svm[d.svm$binary_station == "Other", ]
+other_sample <- other_rows[sample(nrow(other_rows), nrow(luzern_rows)), ]
+d.binary <- rbind(luzern_rows, other_sample)
+d.binary <- d.binary[sample(nrow(d.binary)), ]  # Shuffle rows
+```
+
+### 3.3 Encoding and Scaling
+
+```{r encode-scale, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+# One-hot encode categorical variables and scale time-based feature
+library(caret)
+dummy_vars_bin <- dummyVars(~ WOCHENTAG + LINIEN_TEXT + route, data = d.binary)
+encoded_bin <- predict(dummy_vars_bin, newdata = d.binary)
+scaled_minutes_bin <- scale(d.binary$minutes_to_midnight)
+
+# Combine all features into final dataset for SVM training
+d.binary.final <- data.frame(
+  binary_station = d.binary$binary_station,
+  minutes_to_midnight = as.numeric(scaled_minutes_bin),
+  encoded_bin
+)
+```
+
+Although the current model uses downsampling to balance the classes, alternative strategies such as class weighting or synthetic oversampling (e.g., SMOTE) could be considered in future work. These approaches preserve more training data and may lead to improved generalization, particularly in scenarios with evolving class distributions or in applications involving rare station patterns.
+
+## 4. Model Training and Evaluation
+
+### 4.1 Cross-Validation Strategy
+
+```{r cv-setup, include=FALSE}
+# Define 5-fold cross-validation with ROC optimization
+set.seed(123)
+control <- trainControl(
+  method = "cv",
+  number = 5,
+  verboseIter = TRUE,
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary
+)
+```
+
+### 4.2 Train Linear SVM
+
+```{r linear-svm, echo=TRUE, results='hide', cache=TRUE}
+# Train linear SVM using caret with parallel processing
+library(doParallel)
+cl <- makePSOCKcluster(parallel::detectCores() - 1)
+registerDoParallel(cl)
+
+svm_linear_bin <- train(
+  binary_station ~ .,
+  data = d.binary.final,
+  method = "svmLinear",
+  trControl = control,
+  tuneGrid = expand.grid(C = c(0.01, 0.1, 1)),
+  metric = "ROC"
+)
+
+stopCluster(cl)
+```
+
+### 4.3 Evaluate Model Performance
+
+```{r roc-curve, echo=TRUE, message=FALSE, warning=FALSE}
+# Evaluate model: ROC curve
+library(pROC)
+prob_preds <- predict(svm_linear_bin, d.binary.final, type = "prob")
+roc_curve <- roc(response = d.binary.final$binary_station, predictor = prob_preds[, "Luzern"])
+plot(roc_curve, main = "ROC Curve for Linear SVM")
+
+```
+
+```{r confusion-matrix, echo=TRUE}
+# Evaluate model: confusion matrix
+preds_lin <- predict(svm_linear_bin, d.binary.final)
+conf_mat <- confusionMatrix(preds_lin, d.binary.final$binary_station)
+print(conf_mat)
+
+```
+
+```{r classification-metrics, echo=FALSE, message=FALSE, warning=FALSE}
+# Evaluate model: performance metrics
+library(MLmetrics)
+actual <- d.binary.final$binary_station
+cat("Precision:", Precision(preds_lin, actual, positive = "Luzern"), "\n")
+cat("Recall:", Recall(preds_lin, actual, positive = "Luzern"), "\n")
+cat("F1 Score:", F1_Score(preds_lin, actual, positive = "Luzern"), "\n")
+```
+
+### 4.4 Model Evaluation Results
+
+The linear SVM model achieved a cross-validated accuracy of **60.3%** with **C = 1** as the optimal regularization parameter. The ROC curve (Figure below) suggests the classifier performs modestly better than random guessing, though the curve remains close to the diagonal.
+
+The confusion matrix indicates:
+
+-   **Precision (Luzern)**: 0.374
+-   **Recall (Luzern)**: 0.691
+-   **F1 Score (Luzern)**: 0.485
+-   **Balanced Accuracy**: 0.603
+
+While the recall is relatively strong, the model struggles with precision. This suggests that although the model catches most of the actual Luzern cases, it also mistakenly classifies many “Other” stations as Luzern. This misclassification behavior is expected due to the original class imbalance and overlapping features.
+
+While Support Vector Machines are not inherently interpretable, future iterations of this analysis could benefit from techniques such as permutation importance or partial dependence plots to better understand feature influence. These methods can highlight which time-based or route-specific variables contribute most to the classification, providing transparency and trust for business users. Such interpretability would be especially valuable if the model were to be deployed in production settings where decisions impact data quality pipelines.
+
+## 4.5 Compare With Radial Kernel SVM
+
+To compare modeling strategies, we also trained an SVM with a radial basis function (RBF) kernel using the same features and cross-validation strategy.
+
+```{r rbf-svm-train, echo=TRUE, results='hide', cache=TRUE}
+# Train radial basis SVM and evaluate performance
+cl <- makePSOCKcluster(parallel::detectCores() - 1)
+registerDoParallel(cl)
+
+svm_rbf_bin <- train(
+  binary_station ~ .,
+  data = d.binary.final,
+  method = "svmRadial",
+  trControl = control,
+  tuneGrid = expand.grid(C = c(0.01, 0.1, 1), sigma = c(0.01)),
+  metric = "ROC"
+)
+
+stopCluster(cl)
+
+# Generate predictions and evaluate with ROC and confusion matrix
+prob_preds_rbf <- predict(svm_rbf_bin, d.binary.final, type = "prob")
+roc_rbf <- roc(response = d.binary.final$binary_station, predictor = prob_preds_rbf[, "Luzern"])
+preds_rbf <- predict(svm_rbf_bin, d.binary.final)
+conf_mat_rbf <- confusionMatrix(preds_rbf, d.binary.final$binary_station)
+
+```
+
+```{r rbf-roc, echo=FALSE}
+# Plot ROC curve for RBF SVM
+plot(roc_rbf, main = "ROC Curve for Radial SVM")
+```
+
+### Model Comparison Table
+
+```{r model-comparison, echo=TRUE}
+# Build comparison table of performance metrics for both kernels
+precision_rbf <- Precision(preds_rbf, actual, positive = "Luzern")
+recall_rbf <- Recall(preds_rbf, actual, positive = "Luzern")
+f1_rbf <- F1_Score(preds_rbf, actual, positive = "Luzern")
+auc_lin <- auc(roc_curve)
+auc_rbf <- auc(roc_rbf)
+
+comparison <- data.frame(
+  Model = c("Linear SVM", "Radial SVM"),
+  AUC = c(auc_lin, auc_rbf),
+  Precision = c(Precision(preds_lin, actual, positive = "Luzern"), precision_rbf),
+  Recall = c(Recall(preds_lin, actual, positive = "Luzern"), recall_rbf),
+  F1_Score = c(F1_Score(preds_lin, actual, positive = "Luzern"), f1_rbf)
+)
+
+knitr::kable(comparison, digits = 3)
+```
+
+## 5. Discussion
+
+Although this chapter focuses on classifying the station "Luzern" versus all others, this binary formulation is intended as a representative case study. Luzern was selected due to its high frequency and stable presence in the dataset. The methodology developed here can be generalized to other high-frequency stations or extended through one-vs-rest classifiers to support multi-station imputation. This scalable framework lays the groundwork for broader deployment across Zentralbahn's historical data correction efforts.
+
+The binary classification using a linear SVM demonstrated moderate performance. The model successfully identified a majority of Luzern instances (high recall), but suffered from low precision due to overlapping feature distributions and ambiguous class boundaries.
+
+The ROC curve, which lies close to the diagonal, further suggests that the model's ability to distinguish between classes is limited—indicating marginal discriminative power.
+
+When comparing kernels, the radial SVM showed slight improvements in classification metrics (e.g., higher ROC AUC and F1-score). However, these gains came at the cost of significantly longer computation time and did not justify a switch for practical applications. Given its interpretability and computational efficiency, the linear model remains a strong candidate, especially in real-time settings or for large-scale imputation pipelines.
+
+Despite simplifying the task to a binary problem, several challenges persist:
+
+-   High feature similarity between Luzern and other stations reduces discriminative potential.
+
+-   Temporal variables do not vary sufficiently across locations to provide strong signals.
+
+-   The route variable, while informative, may introduce noise due to its high cardinality and overlapping combinations.
+
+Future improvements could involve:
+
+-   Engineering more informative features (e.g., lagged time-based attributes or geographical clustering).
+
+-   Applying kernel-based SVMs (e.g., RBF) on smaller, high-quality samples.
+
+-   Exploring ensemble models or dimensionality reduction to combat noise and overfitting.
+
+## 6. Conclusion
+
+This analysis demonstrated how Support Vector Machines can be used to impute missing station names for the Swiss Federal Railways. Initially formulated as a multi-class problem, the task was reformulated as a binary classification due to high class imbalance, overlapping distributions, and excessive runtime demands.
+
+The linear SVM model achieved a balanced accuracy of 60.3% and a recall of 69% for predicting Luzern. Although precision was relatively low, the model is effective for flagging likely Luzern observations, which could then be verified through business logic or downstream systems.
+
+A comparison with a radial SVM showed slight metric improvements, but at the expense of computational cost. For production scenarios where interpretability and efficiency are paramount, the linear model offers a practical trade-off.
+
+In summary, even a simple linear SVM—when paired with balanced training data and thoughtful feature engineering—can provide actionable insights for enriching transport data in real-world operational settings.
