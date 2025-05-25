@@ -287,6 +287,133 @@ confusionMatrix(as.factor(pred), as.factor(test$FAELLT_AUS_TF))
 ```
 
 
+# Linear Model
+
+
+```{r import data}
+## 1 Getting the data
+d.trains <- read.csv("data/zentrahlbahn_final.csv",
+                     header = TRUE,
+                     stringsAsFactors = TRUE)
+##
+#str(d.trains)
+```
+
+
+```{r preprocessing}
+## 2 Preprocessing the data
+library(dplyr)
+
+## Reducing data
+d.trains <- d.trains %>%
+  select(ANKUNFTDELAY_sec, ABFAHRTDELAY_sec, START, ZIEL) %>%
+  mutate(
+    ANKUNFTDELAY_sec = as.integer(as.character(ANKUNFTDELAY_sec)),
+    ABFAHRTDELAY_sec = as.integer(as.character(ABFAHRTDELAY_sec))
+  ) %>%
+  filter(!is.na(ANKUNFTDELAY_sec) & !is.na(ABFAHRTDELAY_sec)) %>%
+  mutate(start_in_Luzern = factor(
+    case_when(
+      START == "Luzern" ~ "Luzern",
+      TRUE ~ "Other"
+    ),
+    levels = c("Other", "Luzern")
+  )) %>% 
+  mutate(ziel_in_Luzern = factor(
+    case_when(
+      ZIEL == "Luzern" ~ "Luzern",
+      TRUE ~ "Other"
+    ),
+    levels = c("Other", "Luzern")
+  )) %>%
+  rename(delay_arrival = ANKUNFTDELAY_sec, delay_departure = ABFAHRTDELAY_sec)
+
+## debugging
+str(d.trains)
+summary(d.trains)
+```
+## Introduction
+To explore whether the Swiss railway system incorporates buffer times into its scheduling, we examine the relationship between arrival delays and the delays at subsequent departures. The idea is intuitive: if a train arrives late at a station, does it still manage to depart on time, or does the delay propagate? A system with efficient time buffers or flexible operations would absorb part of the delay, resulting in a weaker correlation between arrival and departure delays.
+
+To test this, we model the **departure delay** as a function of the **arrival delay**. A slope of 1 would indicate full delay propagation (i.e., no buffer), whereas a slope significantly less than 1 would suggest that at least part of the arrival delay is being absorbed — pointing toward built-in schedule flexibility or operational efficiency.
+
+Understanding this relationship is crucial for the project's primary goal of identifying the root causes of performance bottlenecks during November 2024 and providing data-driven recommendations to improve punctuality and operational efficiency on affected lines for Zentralbahn.By quantifying the extent of delay propagation, this model provides insights into specific operational areas where buffer times may be insufficient or where interventions are needed to prevent delays from compounding across the network.
+
+## Inital Model: Full Dataset
+
+```{r model-buffer-effect, include=TRUE}
+lm.fit_buffer <- lm(delay_departure ~ delay_arrival, data = d.trains)
+summary(lm.fit_buffer)
+```
+
+```{r plot model-buffer-effect, include=TRUE}
+plot(delay_departure ~ delay_arrival, data = d.trains,
+     col = rgb(0, 0, 1, 0.1),
+     pch = 16,
+     main = "Departure Delay vs Arrival Delay",
+     xlab = "Arrival Delay (previous train)",
+     ylab = "Departure Delay (next train)")
+abline(lm.fit_buffer, col = "red", lwd = 2)
+
+```
+The plot above illustrates the relationship between a train’s arrival delay and the subsequent departure delay, along with a fitted regression line. Visually, the data points align closely along a straight line, indicating a strong linear relationship between the two variables. This is confirmed by the statistical output of the linear model.
+
+The regression summary provides the following equation:
+
+delay_departure=−27.04+1.02⋅delay_arrival
+
+### Key findings:
+
+- Intercept (-27.04): When a train arrives exactly on time (arrival delay = 0), the model predicts a small negative departure delay — i.e., the next train could depart slightly earlier than scheduled. This may reflect a schedule design with built-in buffer time.
+
+- Slope (1.019): For every 1-second increase in arrival delay, the departure delay increases by approximately 1.02 seconds. This means that arrival delays are not just fully carried over — they are slightly amplified on average. This suggests very limited buffer in the turnaround schedule.
+
+- R² = 0.797: About 80% of the variation in departure delays is explained by the arrival delay. This is quite high and supports the interpretation that arrival delays are the main driver of whether the next train is delayed.
+
+## Motivation for Filtering the Data
+
+Despite the strong correlation, we observed that many entries include negative or near-zero delay values, representing trains that arrived or departed ahead of schedule. While this may reflect operational efficiency, such cases introduce different dynamics into the model and can distort the interpretation.
+
+Our focus is on how actual delays propagate. Including early trains or those with negligible delays may bias the regression line — particularly the slope — and obscure insights about how the system handles genuine disruptions.
+
+To isolate the effects of real delays, we first filter the data to include only cases with non-negative delays, and further refine it by introducing a minimum threshold of 3 minutes (180 seconds) for the arrival delay.
+
+## Filtered Model: Meaningful Delays Only
+
+```{r Filter for, echo=TRUE, include=TRUE}
+d.trains.reduced <- d.trains %>% 
+  filter(delay_arrival > 180)
+  
+```
+
+```{r re-fit the linear model, include=TRUE}
+lm.delay_filtered <- lm(delay_departure ~ delay_arrival, data = d.trains.reduced)
+summary(lm.delay_filtered)
+```
+```{r plot the re-fit model}
+plot(delay_departure ~ delay_arrival, data = d.trains.reduced,
+     col = rgb(0, 0, 1, 0.1), pch = 16,
+     main = "Departure Delay vs Arrival Delay (>3 min)",
+     xlab = "Arrival Delay (sec)", ylab = "Departure Delay (sec)")
+
+abline(lm.delay_filtered, col = "red", lwd = 2)
+
+```
+By focusing only on arrival delays over 3 minutes, we filter out routine fluctuations and concentrate on substantial disruptions.
+
+### Revised model output:
+
+delay_departure=−21.54+0.99⋅delay_arrival
+
+- Slope (0.99): Delay is still almost fully propagated, but the value just under 1 suggests minimal buffering might occur.
+
+- Intercept (-21.54): Slightly less negative than before, implying that the model predicts closer to on-time departures in significant delay cases.
+
+- R² = 0.9565: A very high explanatory power — over 95% of the variation in departure delay is accounted for by arrival delay — suggesting a very consistent propagation pattern for meaningful delays.
+
+## Conclusion
+The Linear Model analysis, a key step in **identifying root causes of performance bottlenecks** for Zentralbahn during November 2024, revealed a **strong correlation between arrival and subsequent departure delays**. This indicates **minimal systematic buffer time** in the system, particularly when delays exceed approximately 3 minutes. Findings show that once a delay occurs, it tends to **propagate almost entirely** through the network. This suggests that while efficient, the system has **limited capacity to absorb larger disruptions** without impacting subsequent departures. These results are crucial for understanding the operational patterns contributing to bottlenecks and provide **data-driven insights** necessary for developing recommendations to improve punctuality and operational efficiency for Zentralbahn.
+
 # Generalised Additive Model
 
 In this project, we apply Generalized Additive Models (GAMs) to analyze the effects of various predictors on train delays, specifically focusing on the response variables ANKUNFTDELAY_min (arrival delay in minutes) and ABFAHRTDELAY_min (departure delay in minutes). 
