@@ -1577,7 +1577,7 @@ plot(roc_curve, main = "ROC Curve for Linear SVM")
 preds_lin <- predict(svm_linear_bin, d.binary.final)
 conf_mat <- confusionMatrix(preds_lin, d.binary.final$binary_station)
 print(conf_mat)
-
+svm_linear_bin$bestTune
 ```
 
 ```{r classification-metrics, echo=FALSE, message=FALSE, warning=FALSE}
@@ -1642,7 +1642,25 @@ conf_mat_rbf <- confusionMatrix(preds_rbf, d.binary.final$binary_station)
 print(conf_mat_rbf)
 # Plot ROC curve for RBF SVM
 plot(roc_rbf, main = "ROC Curve for Radial SVM")
+svm_rbf_bin$bestTune
 ```
+
+### Model Evaluation Results
+
+The radial SVM model achieved a cross-validated accuracy of 60.3%, with **C = 0.1** selected as the optimal cost parameter.
+As with the linear model, the ROC curve (Figure above) indicates performance slightly above random chance, with a curve that remains close to the diagonal - suggesting modest discriminative power.
+
+The confusion matrix shows a reversal in the model's error profile compared to the linear version:
+
+-   **Precision (Luzern): 0.688**
+-   **Recall (Luzern): 0.378**
+-   **F1 Score (Luzern): 0.484**
+-   **Balanced Accuracy: 0.603**
+
+While precision is notably higher than in the linear model, recall has dropped substantially.
+This suggests the radial model is **more conservative** in predicting Luzern, reducing false positives at the cost of missing many true Luzern cases.
+Despite the change in decision boundary, the overall balanced accuracy remains nearly identical to the linear model, and the modest gain in precision does not clearly outweigh the loss in recall.
+Given the added computational cost and limited performance gain, the RBF kernel offers only marginal benefit under the current feature set.
 
 ## Model Comparison
 
@@ -1690,7 +1708,7 @@ legend("bottomright",
 
 ## Discussion
 
-While this chapter focuses on classifying "Luzern" versus all other stations, the binary setup serves as a scalable case study.
+While this chapter focuses on classifying Luzern versus all other stations, the binary setup serves as a scalable case study.
 Luzern was chosen for its frequency and stability in the data, but the approach generalizes to other stations or multi-class scenarios via one-vs-rest classifiers—paving the way for broader imputation strategies across Zentralbahn’s records.
 
 The linear SVM yielded moderate performance, with high recall but low precision—reflecting overlapping feature distributions and limited class separability.
