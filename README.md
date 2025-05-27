@@ -21,6 +21,7 @@ This project contains the source code, data, and documentation related to the an
   - `zentralbahn_final.csv`: The main dataset used for the analysis.  
   - Raw data files.  
   - Intermediate CSV files generated during data processing.
+  - Back up CSV files.
 
 ## Note
 
