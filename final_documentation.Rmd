@@ -130,6 +130,9 @@ library(mgcv)
 library(tidyr)
 library(ggplot2)
 library(caret)
+library(doParallel)
+library(pROC)
+library(MLmetrics)
 theme_set(theme_bw())
 
 ```
