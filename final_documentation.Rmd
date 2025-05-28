@@ -1575,7 +1575,7 @@ library(pROC)
 prob_preds <- predict(svm_linear_bin, d.binary.final, type = "prob")
 #roc_curve <- roc(response = d.binary.final$binary_station, predictor = prob_preds[, "Luzern"])
 #plot(roc_curve, main = "ROC Curve for Linear SVM")
-knitr::include_graphics("final_documentation_files/figure-html/roc-curve-1.png")
+knitr::include_graphics("final_documentation_files/plots/roc-curve-1.png")
 ```
 
 ```{r SVM 1 confusion-matrix, include=TRUE}
@@ -1669,7 +1669,7 @@ conf_mat_rbf <- confusionMatrix(preds_rbf, d.binary.final$binary_station)
 print(conf_mat_rbf)
 # Plot ROC curve for RBF SVM
 #plot(roc_rbf, main = "ROC Curve for Radial SVM")
-knitr::include_graphics("final_documentation_files/figure-html/rbf-roc-1.png")
+knitr::include_graphics("final_documentation_files/plots/rbf-roc-1.png")
 svm_rbf_bin$bestTune
 ```
 
@@ -1753,7 +1753,7 @@ comparison <- data.frame(
 knitr::kable(comparison, digits = 3)
 
 
-knitr::include_graphics("final_documentation_files/figure-html/model-comparison-1.png")
+knitr::include_graphics("final_documentation_files/plots/model-comparison-1.png")
 ```
 
 ## Discussion
