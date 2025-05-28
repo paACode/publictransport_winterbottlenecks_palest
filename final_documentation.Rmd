@@ -1,7 +1,7 @@
 ---
 title: "Public Transport Winterbottlenecks"
 subtitle: "[Public GitHub Repository](https://github.com/paACode/publictransport_winterbottlenecks_palest)"
-author: "Leonard, Stefan, Pascal"
+author: "Leonard Dost, Stefan Dreyfus, Pascal Ackermann"
 date: "01.06.2025"
 output:
   html_document:
@@ -70,11 +70,11 @@ HSLU is tasked with:
 To ensure a thorough and methodical exploration of different modeling approaches, responsibilities for leading the development of individual models were distributed among the team members.
 The allocation of model leadership was as follows:
 
-Leonard: Linear Model, Support Vector Machine
+Leonard Dost: Linear Model, Support Vector Machine
 
-Pascal: Generalised Linear Model (Poisson family), Neural Network
+Pascal Ackermann: Generalised Linear Model (Poisson family), Neural Network
 
-Stefan: Generalised Additive Model, Generalised Linear Model (Binomial family)
+Stefan Dreyfus: Generalised Additive Model, Generalised Linear Model (Binomial family)
 
 While each team member took the lead on specific models, the entire team contributed actively to all stages of the project.
 From data preprocessing to model evaluation and interpretation, the collaborative approach ensured consistency, knowledge sharing, and a stronger overall outcome.
