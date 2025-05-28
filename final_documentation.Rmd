@@ -1570,8 +1570,8 @@ These evaluations offer a balanced view of model performance, particularly under
 # Evaluate model: ROC curve
 library(pROC)
 prob_preds <- predict(svm_linear_bin, d.binary.final, type = "prob")
-roc_curve <- roc(response = d.binary.final$binary_station, predictor = prob_preds[, "Luzern"])
-plot(roc_curve, main = "ROC Curve for Linear SVM")
+#roc_curve <- roc(response = d.binary.final$binary_station, predictor = prob_preds[, "Luzern"])
+#plot(roc_curve, main = "ROC Curve for Linear SVM")
 
 ```
 
@@ -1634,7 +1634,7 @@ stopCluster(cl)
 
 # Generate predictions and evaluate with ROC and confusion matrix
 prob_preds_rbf <- predict(svm_rbf_bin, d.binary.final, type = "prob")
-roc_rbf <- roc(response = d.binary.final$binary_station, predictor = prob_preds_rbf[, "Luzern"])
+#roc_rbf <- roc(response = d.binary.final$binary_station, predictor = prob_preds_rbf[, "Luzern"])
 preds_rbf <- predict(svm_rbf_bin, d.binary.final)
 conf_mat_rbf <- confusionMatrix(preds_rbf, d.binary.final$binary_station)
 
@@ -1644,7 +1644,7 @@ conf_mat_rbf <- confusionMatrix(preds_rbf, d.binary.final$binary_station)
 # print confusion matrix
 print(conf_mat_rbf)
 # Plot ROC curve for RBF SVM
-plot(roc_rbf, main = "ROC Curve for Radial SVM")
+#plot(roc_rbf, main = "ROC Curve for Radial SVM")
 svm_rbf_bin$bestTune
 ```
 
