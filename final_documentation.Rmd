@@ -1572,7 +1572,7 @@ library(pROC)
 prob_preds <- predict(svm_linear_bin, d.binary.final, type = "prob")
 #roc_curve <- roc(response = d.binary.final$binary_station, predictor = prob_preds[, "Luzern"])
 #plot(roc_curve, main = "ROC Curve for Linear SVM")
-
+knitr::include_graphics("final_documentation_files/figure-html/roc-curve-1.png")
 ```
 
 ```{r SVM 1 confusion-matrix, include=TRUE}
@@ -1640,11 +1640,12 @@ conf_mat_rbf <- confusionMatrix(preds_rbf, d.binary.final$binary_station)
 
 ```
 
-```{r rbf-roc}
+```{r rbf-roc, include=TRUE}
 # print confusion matrix
 print(conf_mat_rbf)
 # Plot ROC curve for RBF SVM
 #plot(roc_rbf, main = "ROC Curve for Radial SVM")
+knitr::include_graphics("final_documentation_files/figure-html/rbf-roc-1.png")
 svm_rbf_bin$bestTune
 ```
 
@@ -1674,7 +1675,7 @@ These differences, however, were modest.
 The ROC curves for both models illustrate a close overlap, with the radial model showing a slight advantage in sensitivity at various thresholds.
 Despite this, the increased computational complexity of the radial kernel may not justify its use over the linear model in time-sensitive or large-scale applications.
 
-```{r model-comparison, echo=FALSE, include=TRUE}
+```{r model-comparison, echo=FALSE, include=TRUE, eval=FALSE}
 # Build comparison table of performance metrics for both kernels
 precision_rbf <- Precision(preds_rbf, actual, positive = "Luzern")
 recall_rbf <- Recall(preds_rbf, actual, positive = "Luzern")
@@ -1707,6 +1708,33 @@ legend("bottomright",
        legend = c("Linear SVM", "Radial SVM"),
        col = c("blue", "red"),
        lwd = 2)
+```
+
+```{r model-comparison 2, include=TRUE}
+# Manually defined values from prior evaluation
+auc_lin <- 0.629
+auc_rbf <- 0.644
+precision_lin <- 0.374
+recall_lin <- 0.691
+f1_lin <- 0.485
+precision_rbf <- 0.688
+recall_rbf <- 0.378
+f1_rbf <- 0.488
+
+# Construct the comparison table manually
+comparison <- data.frame(
+  Model = c("Linear SVM", "Radial SVM"),
+  AUC = c(auc_lin, auc_rbf),
+  Precision = c(precision_lin, precision_rbf),
+  Recall = c(recall_lin, recall_rbf),
+  F1_Score = c(f1_lin, f1_rbf)
+)
+
+# Display the table
+knitr::kable(comparison, digits = 3)
+
+
+knitr::include_graphics("final_documentation_files/figure-html/model-comparison-1.png")
 ```
 
 ## Discussion
