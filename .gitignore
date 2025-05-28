@@ -62,5 +62,5 @@ raw_data
 
 #Folders to ignore
 final_documentation_cache/
-final_documentation_files/
+final_documentation_files/figure-html
 
