@@ -1381,13 +1381,13 @@ Naturally, the more trains are in operation, the higher the likelihood of delays
 
 # Support Vector Machine Model
 
-## Introduction
+In modern transportation systems, data incompleteness remains a persistent challenge. Within Zentralbahn's operational datasets, one recurring issue is the absence of station names (HALTESTELLEN_NAME), which impairs downstream analysis and monitoring.
 
-In modern transportation systems, data incompleteness remains a persistent challenge.
-The Swiss Zentralbahn frequently encounters missing entries in operational datasets, particularly regarding station names (`HALTESTELLEN_NAME`).
-Addressing this issue has become a priority for ensuring high-quality analytics and system monitoring.
-In this report, we aim to develop a predictive model using Support Vector Machines (SVM) to enrich missing station name data based on related contextual features such as time, weekday, and route metadata.
-The overarching objective is to demonstrate a scalable approach that can support the SBB in data recovery efforts.
+As part of the broader data-driven initiative to improve performance and data quality—particularly in light of the November 2024 disruptions—this chapter focuses on addressing missing station data through predictive modeling.
+
+Specifically, we propose using Support Vector Machines (SVM), a well-established classification algorithm, to infer missing station names based on contextual features such as timestamps, weekday indicators, and route metadata. This modeling task is framed as a multi-class classification problem, aiming to recover labels for incomplete entries.
+
+Our objective is to demonstrate a scalable methodology that not only enhances the quality of the November 2024 dataset but also provides a template for correcting similar issues in historical records, ultimately supporting SBB’s long-term data reliability goals.
 
 ## Data Import and Initial Exploration
 
@@ -1423,7 +1423,7 @@ Given that SVMs are sensitive to feature scale and representation, our goal was 
 -   **Temporal Features**: We parsed date and time variables into structured formats.
 -   **Minutes to Midnight**: This numeric representation provides a linear scale for time, crucial for SVM performance.
 -   **Weekday Extraction**: Encoded as a categorical variable, this adds temporal context.
--   **Route Encoding**: By combining `START` and `ZIEL`, we capture trip patterns relevant to station inference.
+-   **Route Encoding**: We constructed a new categorical feature by concatenating the departure `START` and destination `ZIEL` station names (e.g., "Engelberg_Luzern"). This captures directional travel information and enables the model to recognize station-pair patterns.
 
 ```{r feature-engineering}
 # Load date/time and data manipulation libraries
@@ -1454,6 +1454,7 @@ d.svm <- d.trains %>%
 ## Binary Classification Reformulation
 
 ### Why We Switched to Binary Classification
+We defined a binary classification label that assigns the value `Luzern` when the station name matches Luzern, and `Other` otherwise.
 
 Our initial plan involved a multi-class SVM model to predict the full set of station names.
 However, this approach encountered multiple challenges:
@@ -1489,7 +1490,7 @@ Given the class imbalance—where non-Luzern stations are more frequent—we app
 Specifically, we randomly sampled the majority class (Other) to match the number of Luzern cases, thereby preventing the model from being biased toward the more common class.
 The resulting dataset was then shuffled to eliminate any ordering effects before model training.
 
-### Encoding and Scaling
+### Encoding, Scaling and Dataset Assembly
 
 ```{r encode-scale, echo=TRUE, results='hide', message=FALSE, warning=FALSE, include=TRUE}
 # One-hot encode categorical variables and scale time-based feature
@@ -1509,7 +1510,9 @@ d.binary.final <- data.frame(
 Although the current model uses downsampling to balance the classes, alternative strategies such as class weighting or synthetic oversampling (e.g., SMOTE) could be considered in future work.
 These approaches preserve more training data and may lead to improved generalization, particularly in scenarios with evolving class distributions or in applications involving rare station patterns.
 
-## SVM Model 1: Linear Kernal
+The final dataset was prepared with balanced classes and scaled numerical features, enabling effective SVM training. In the next section, we evaluate model performance using cross-validation to ensure robustness and generalizability.
+
+## SVM Model 1: Linear Kernel
 
 ### Cross-Validation Strategy
 
@@ -1595,20 +1598,41 @@ cat("F1 Score:", F1_Score(preds_lin, actual, positive = "Luzern"), "\n")
 ### Model Evaluation Results
 
 The linear SVM model achieved a cross-validated accuracy of **60.3%** with **C = 1** as the optimal regularization parameter.
-The ROC curve (Figure above) suggests the classifier performs modestly better than random guessing, though the curve remains close to the diagonal.
+The ROC curve (Figure above) suggests the classifier performs only modestly better than random guessing (AUC ≈ 0.6), indicating limited discriminative power.
 
-The confusion matrix indicates:
+Confusion Matrix Summary:
 
 -   **Precision (Luzern)**: 0.374
 -   **Recall (Luzern)**: 0.691
 -   **F1 Score (Luzern)**: 0.485
 -   **Balanced Accuracy**: 0.603
 
-While the recall is relatively strong, the model struggles with precision.
+While the recall is relatively strong, the model struggles with precision, meaning it often predicts Luzern when the true label is Other.
 This suggests that although the model catches most of the actual Luzern cases, it also mistakenly classifies many “Other” stations as Luzern.
 This misclassification behavior is expected due to the original class imbalance and overlapping features.
 
-## SVM Model 2: Radial Kernal
+### Feature Importance
+To better understand the model's decision-making process, we analyzed feature importance based on the linear SVM’s learned weights. The top five most influential variables are shown in the figure below. Line identifiers such as `S5` and `IR` emerged as the strongest predictors, followed closely by directional routes involving Luzern (e.g., `Luzern_Giswil`, `Giswil_Luzern`). Weekday effects also showed some predictive value.
+
+These findings suggest that the model’s classification is primarily driven by spatial patterns encoded in the route and line metadata, with some influence from temporal structure.
+
+::: {style="text-align: center;"}
+```{r svm 1 variable importance, include=TRUE, fig.width=5, fig.height=3}
+importance <- varImp(svm_linear_bin)
+
+# View the top variables
+#print(importance)
+
+# Optionally: plot importance
+# Plot top 5 most important variables
+plot(importance, top = 5, main = "Top 5 Most Influential Features (Linear SVM)")
+
+```
+:::
+
+While the linear kernel offered interpretability and computational efficiency, its performance was constrained by overlapping feature distributions and the inherent limitations of linear separability. To address these constraints, we next explore a non-linear variant using the radial basis function (RBF) kernel.
+
+## SVM Model 2: Radial Kernel
 
 To evaluate the impact of using a non-linear decision boundary, we trained an SVM model with a radial basis function (RBF) kernel using the same feature set and cross-validation strategy as the linear model.
 Similar to the previous setup, parallel processing was enabled to expedite computation.
@@ -1668,12 +1692,7 @@ Given the added computational cost and limited performance gain, the RBF kernel 
 
 ## Model Comparison
 
-To systematically compare the linear and radial SVM models, we summarized their performance across several classification metrics: AUC, precision, recall, and F1 score.
-Both models were evaluated on the same dataset using the same cross-validation strategy to ensure a fair comparison.
-The radial SVM achieved slightly higher values across all metrics, particularly in terms of AUC (0.644 vs. 0.629) and F1 score (0.488 vs. 0.485), suggesting a marginally better ability to distinguish between classes.
-These differences, however, were modest.
-The ROC curves for both models illustrate a close overlap, with the radial model showing a slight advantage in sensitivity at various thresholds.
-Despite this, the increased computational complexity of the radial kernel may not justify its use over the linear model in time-sensitive or large-scale applications.
+To systematically compare the linear and radial SVM models, we summarized their performance across several classification metrics: AUC, precision, recall, and F1 score. Both models were evaluated on the same dataset using the same cross-validation strategy to ensure a fair comparison. While the radial SVM achieved slightly higher values across all metrics — including a marginal AUC increase from 0.629 to 0.644 — both models exhibited limited overall discriminative power. The ROC curves show substantial overlap, with the radial model offering only a slight advantage in sensitivity at certain thresholds. Given this modest performance gain and the radial model’s higher computational cost, the linear SVM remains the more practical choice for time-sensitive or large-scale applications.
 
 ```{r model-comparison, echo=FALSE, include=TRUE, eval=FALSE}
 # Build comparison table of performance metrics for both kernels
