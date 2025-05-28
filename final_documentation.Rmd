@@ -538,7 +538,7 @@ Enhancing recovery capacity or increasing buffer time in these areas may offer t
 In this project, we apply Generalized Additive Models (GAMs) to analyze the effects of various predictors on train delays, specifically focusing on the response variables ANKUNFTDELAY_min (arrival delay in minutes) and ABFAHRTDELAY_min (departure delay in minutes).
 Due to the limited availability of continuous variables in our dataset these two delay metrics will be the response variables we will focus on.
 A key subset of our predictors is related to weather conditions.
-However, because the ZB railway line spans multiple climatic regions, comparing weather-related predictors across all stations introduces variability that may obscure meaningful patterns.
+However, because the Zentralbahn railway line spans multiple climatic regions, comparing weather-related predictors across all stations introduces variability that may obscure meaningful patterns.
 To address this, we restrict our analysis to a subset of stations located within the Lucerne region, where the climate is more uniform.
 
 ```{r gam-general-codes-subset, include=FALSE, echo=FALSE}
@@ -645,7 +645,7 @@ summary(gam_temp_precip_tageszeit_linien_text)
 ```
 
 The reference levels for the categorical predictors are evening for TAGESZEIT and EXT for LINIEN_TEXT.
-Under these baseline conditions (evening, 0°C, and 0 mm precipitation), the EXT line of ZB in the Lucerne region has an average departure delay of approximately 1.25 minutes.
+Under these baseline conditions (evening, 0°C, and 0 mm precipitation), the EXT line of Zentralbahn in the Lucerne region has an average departure delay of approximately 1.25 minutes.
 
 The time of day has a statistically significant effect on departure delays.
 Compared to the evening (the reference category), trains departing at other times of day experience between 0.12 and 0.30 minutes less delay on average.
