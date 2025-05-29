@@ -658,7 +658,8 @@ The S5 line’s difference (0.51 minutes less) is not statistically significant.
 
 Interpretation of the Smooth Terms:
 
-```{r effect_temperature_depature_delay, include=TRUE, echo=FALSE}
+```{r effect_temperature_depature_delay, include=TRUE, echo=FALSE, fig.width=5, fig.height=3}
+
 plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 1,main = "Effect of Temperature on Departure Delay")
 
 ```
@@ -667,7 +668,7 @@ The smooth term for average temperature has an estimated effective degrees of fr
 We have strong evidence that it is not 0 with a p-value \< 0.05.
 The corresponding plot reveals that temperatures between 0 and 6°C have a stronger effect on departure delay, whereas between roughly 6–7°C and 8–10°C the effect is minimal.
 
-```{r effect_percipitation_depature_delay, include=TRUE, echo=FALSE}
+```{r effect_percipitation_depature_delay, include=TRUE, echo=FALSE, fig.width=5, fig.height=3}
 plot(gam_temp_precip_tageszeit_linien_text, residuals = TRUE, select = 2, main = "Effect of Precipitation on Departure Delay")
 ```
 
@@ -753,7 +754,7 @@ zb_final_binominal$Train_Delayed <- as.numeric(zb_final_binominal$Train_Delayed)
 
 ```
 
-```{r first-plotting, include=TRUE, echo=FALSE}
+```{r first-plotting, include=TRUE, echo=FALSE, fig.width=5, fig.height=2.5}
 #Plotting the data
 
 zb_final_binominal %>%
@@ -773,7 +774,7 @@ On the other end of the spectrum, the S41 line shows the lowest delay rate, with
 To predict whether a train is delayed, we use a binomial GLM with Train_Delayed as the binary response variable and LINIEN_TEXT (train line) as the predictor.
 This model estimates how the probability of delay varies across different train lines.
 
-```{r glm-delay, include=TRUE, echo=FALSE}
+```{r glm-delay, include=TRUE, echo=FALSE, fig.width=5, fig.height=2.5}
 
 glm_delay <- glm(Train_Delayed ~ LINIEN_TEXT, family = "binomial", data = zb_final_binominal)
 
@@ -795,7 +796,7 @@ This is interesting because, when the predictors were plotted, R71 was the line 
 The reason for this contradiction could be that while the R71 line might often experience delays, the variance of the delays might be quite narrow.
 To explore this, let's take a look at the boxplot of the train delays by line.
 
-```{r boxplot-ANKUNFTDELAY_min-LINIEN_TEXT, include=TRUE, echo=FALSE}
+```{r boxplot-ANKUNFTDELAY_min-LINIEN_TEXT, include=TRUE, echo=FALSE, fig.width=8, fig.height=4}
 
 boxplot(ANKUNFTDELAY_min ~ LINIEN_TEXT , data = zb_final_binominal)
 
@@ -822,7 +823,7 @@ Compared to the baseline (EXT), all other lines show significantly lower odds of
 For example, line IR has 91% lower odds of delay, S41 has 99% lower odds, and lines PE, R70, and S5 also show substantial reductions (93%, 91%, and 95% lower odds, respectively).
 This confirms that EXT is far more prone to delays than the other lines.
 
-As a next step, we simulate predictions using the GLM to estimate the likelihood of train delays, and then compare these simulated results with the actual dataset.
+As a next step, we simulate predictions using the GLM to estimate the likelihood of train delays, and then compare these simulated results with the actual dataset. We will have first a look at the mean of the simulated results:
 
 ```{r simulation-glm-delay, include=FALSE, echo=FALSE}
 
@@ -852,13 +853,10 @@ ggplot(simulated_data, aes(x = reorder(LINIEN_TEXT, predicted_prob), y = predict
 
 ```{r summary-simulated-data, include=TRUE, echo=FALSE}
 
-summary(simulated_data)
-
+mean(simulated_data$predicted_prob)
 ```
 
-The mean of the simulated data is 0.105.
-This is the reason why we cannot take a threshold of 0.5.
-This would result in nearly all cases being classified as non-delayed, since very few predicted probabilities exceed 0.5—ultimately leading to extremely poor sensitivity and almost no true positives.
+The mean of the simulated data is 0.105. This is the reason why we cannot take a threshold of 0.5. This would result in nearly all cases being classified as non-delayed, since very few predicted probabilities exceed 0.5—ultimately leading to extremely poor sensitivity and almost no true positives.
 
 Several thresholds were tested to determine the optimal cut-off point for classifying delays based on the predicted probabilities.
 Thresholds such as 0.03, 0.08, and 0.1 were evaluated, but they either led to a very low specificity or poor sensitivity.
@@ -883,6 +881,7 @@ conf_matrix <- confusionMatrix(as.factor(simulated_sample$simulated_delay), as.f
 
 # Printing the confusion matrix
 print(conf_matrix)
+
 ```
 
 The model's accuracy is 76.96%, which at first glance suggests decent performance, but this metric is heavily influenced by the significant imbalance between delayed and non-delayed trains in the dataset.
