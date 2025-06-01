@@ -1807,39 +1807,14 @@ Achieving effective modularity, clarity, and efficiency requires a combination o
 
 # Conclusion
 
-The analysis confirmed what Zentralbahn had likely anticipated: a **severe thunderstorm** caused substantial disruption to train operations, as documented in the official report on the reopening of the **Meiringen–Interlaken Ost** route on **November 25, 2024**([source](https://www.zentralbahn.ch/de/kennenlernen/die-zentralbahn/einblicke/wiedereroeffnung-der-strecke-meiringen-interlaken-ost-am-25-november-2024)).
+This report set out to investigate the operational disruptions experienced by Zentralbahn in November 2024, with a focus on uncovering the root causes of winter-related performance bottlenecks and improving data reliability through predictive modeling. Through a structured exploration of various machine learning methods, the analysis identified critical patterns influencing both delay propagation and data integrity.
 
-In addition to this expected finding, several other valuable insights were uncovered through the application of various statistical models.
-Importantly, **the models developed can be used to predict delays under different operational conditions**, providing a foundation for proactive planning and decision-making.
+Initial modeling using artificial neural networks confirmed that the dataset contained meaningful signals, even without prior domain knowledge. This served as a foundation for more interpretable approaches. Generalized Additive Models demonstrated that while temperature and precipitation exhibit statistically significant relationships with delay metrics, their explanatory power remains limited. In contrast, operational and temporal factors—such as specific train lines or time of day have a more pronounced influence.
 
-<u>**1. High Delay Probability for "EXT" Trains**</u>
+Generalized Linear Models, particularly in the binomial and Poisson frameworks, highlighted the importance of line-specific characteristics and contextual variables like rush-hour periods. Notably, the reopening of the Meiringen–Interlaken line emerged as a key inflection point, significantly altering delay dynamics. Additionally, Luzern’s function as a stabilizing hub was consistently associated with reduced delay propagation, underscoring the strategic importance of hub infrastructure.
 
-Extra trains ("EXT") were found to have the highest probability of delay.
-A likely reason is the use of older trainsets, which may be less reliable or slower to adapt to schedule changes.\
-The model allows for **predicting the likelihood of delay** for individual train entries based on their train type and other features, enabling early intervention or scheduling adjustments.
+Beyond performance modeling, the application of Support Vector Machines addressed a parallel objective: enhancing data quality. By formulating the recovery of missing station names as a classification problem, a methodological basis was established for scalable data imputation. Although performance was modest, the approach contributes to broader efforts to restore and maintain the integrity of historical transport records.
 
-<u>**2. Limited Influence of Weather**</u>
+The findings underscore the multifactorial nature of railway delays, wherein environmental conditions act as secondary factors to more decisive operational and infrastructural elements. While current models offer valuable insights, a substantial portion of variability remains unexplained. This suggests the potential benefit of integrating additional data sources—such as real-time operational logs, staffing levels, or infrastructure status—into future modeling efforts.
 
-Weather conditions showed only a **limited direct effect** on train delays.
-This is likely due to **low temporal resolution** in the available weather data.\
-Still, the model can be used to **quantify expected delay contributions from weather** where data is available, and it is ready to be improved once finer-grained weather data is incorporated.
-
-<u>**3. Operational Patterns and Delay Clusters**</u>
-
-The model identified three distinct operational time categories, with **rush hours** exhibiting the most frequent delays.
-While traffic volume is a plausible factor, this recurring pattern hints at **systemic scheduling or resource constraints**.\
-With this model, it is possible to **predict the expected number of delays per hour** based on operational time and other variables, supporting staffing and dispatch decisions.
-
-Defined operational periods:
-
--   **Low Operation:** 00:00 – 06:00\
--   **Rush Hour:** 06:00 – 09:00, 11:00 – 14:00, and 16:00 – 20:00\
--   **Normal Operation:** All other times
-
-<u>**4. Noteworthy Dates and Events**</u>
-
-The following dates and events stood out in the analysis and can inform the refinement of future models:
-
--   **Extreme Delay Days:** November 22 and 23, 2024 – identified as outlier days with unusually high delays\
--   **Route Reopening:** From **November 25, 2024**, the Meiringen–Interlaken Ost line resumed normal service ([details](https://www.zentralbahn.ch/de/kennenlernen/die-zentralbahn/einblicke/wiedereroeffnung-der-strecke-meiringen-interlaken-ost-am-25-november-2024))\
--   **Return to Normal Operation:** Delay patterns normalized after the disruption, serving as a **benchmark period for predictive model calibration**
+In conclusion, the analysis not only confirms several hypotheses regarding winter bottlenecks but also provides a data-driven framework for identifying vulnerabilities and guiding operational decisions. By transforming raw transport and weather data into actionable insights, this work contributes to a more resilient and efficient transportation system of the Zentralbahn.
