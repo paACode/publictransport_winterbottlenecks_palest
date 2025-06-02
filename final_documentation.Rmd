@@ -84,26 +84,10 @@ On the one hand, data set contained already a wide range of data types.
 On the other hand, we had to add further columns in order to fullfil the requirement.
 The data set has the following data types:
 
-| **Column**            | **Data Type** |
-|-----------------------|---------------|
-| `BETRIEBSTAG`         | Categorical   |
-| `LINIEN_TEXT`         | Categorical   |
-| `HALTESTELLEN_NAME`   | Categorical   |
-| `ANKUNFTSZEIT`        | Datetime      |
-| `AN_PROGNOSSE`        | Datetime      |
-| `ANKUNFTDELAY_sec`    | Continuous    |
-| `ABFAHRTZEIT`         | Datetime      |
-| `AB_PROGNOSSE`        | Datetime      |
-| `ABFAHRTDELAY_sec`    | Continuous    |
-| `START`               | Categorical   |
-| `ZIEL`                | Categorical   |
-| `DELAY_Category`      | Categorical   |
-| `TAGESZEIT`           | Categorical   |
-| `RUSH_HOUR`           | Categorical   |
-| `w_precip_mm_Luzern`  | Continuous    |
-| `w_temp_min_c_Luzern` | Continuous    |
-| `w_temp_avg_c_Luzern` | Continuous    |
-| `FAELLT_AUS_TF`       | Binary        |
+**Categorical:** `BETRIEBSTAG`, `LINIEN_TEXT`, `HALTESTELLEN_NAME`, `START`, `ZIEL`, `DELAY_Category`, `TAGESZEIT`, `RUSH_HOUR`  
+**Datetime:** `ANKUNFTSZEIT`, `AN_PROGNOSSE`, `ABFAHRTZEIT`, `AB_PROGNOSSE`  
+**Continuous:** `ANKUNFTDELAY_sec`, `ABFAHRTDELAY_sec`, `w_precip_mm_Luzern`, `w_temp_min_c_Luzern`, `w_temp_avg_c_Luzern`  
+**Binary:** `FAELLT_AUS_TF`
 
 
 While the table summarizes the original data types, some variables are adapted for specific models.
