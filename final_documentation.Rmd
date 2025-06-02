@@ -363,7 +363,7 @@ par(mfrow = c(1, 1))  # Reset to one plot
 
 ```
 
-To explore whether the Swiss Zentralbahn railway system incorporates buffer times into its scheduling, we examine the relationship between **arrival delays** and subsequent **departure delays**.
+To explore whether the Zentralbahn railway system incorporates buffer times into its scheduling, we examine the relationship between **arrival delays** and subsequent **departure delays**.
 The core question: *If a train arrives late, does it depart late as well* –*or does the schedule absorb the delay?* A slope of 1 in a delay-to-delay model would indicate full propagation, while a slope below 1 would suggest some level of built-in buffer or recovery.
 
 Understanding this relationship is key to improving operational robustness.
@@ -376,7 +376,7 @@ We begin by filtering the data to focus only on meaningful delay values, excludi
 These are operationally different phenomena and can distort the regression analysis.
 
 We then transform the delay variables using a log transformation to account for the right-skewed distribution.
-Rainfall is also log-transformed due to its zero-inflated and skewed nature.
+Precipitation is also log-transformed due to its zero-inflated and skewed nature.
 
 ```{r}
 # Filter: Remove negative delays (early trains)
@@ -411,17 +411,19 @@ summary(model_loglog)
 ### Interpretation
 
 Although delays are recorded in whole seconds, they reflect an underlying continuous process.
-Applying a log transformation improves model fit and interpretability by addressing skewness, even if it visually compresses or bands some of the data.
+To better model this, we applied a log transformation to reduce skewness and improve fit.
+While the transformation changes the scale, it enables a meaningful interpretation in terms of relative (percentage-based) changes.
 
 From the `summary()` output of our baseline model:
 
--   **Slope (`log_arrival` ≈ 0.936)**: Indicates that a 1% increase in arrival delay corresponds to a 0.94% increase in departure delay – evidence of near-complete delay propagation.
+-   **Slope (`log_arrival` ≈ 0.936)**: A 1% increase in arrival delay is associated with an approximate 0.94% increase in departure delay - indicating a strong, nearly proportional relationship.
 
--   **Intercept (\~0.105)**: Suggests a small expected delay even when arrival delay is minimal.
+-   **Intercept (\~0.105)**: After back-transforming, this corresponds to a **baseline multiplier of \~1.111**, meaning when arrival delay is 1 minute, expected departure delay is about **1.11 minutes**.
 
--   **R-squared (≈ 0.834)**: Implies that over 83% of the variation in log departure delay is explained by log arrival delay alone.
+-   **R-squared (≈ 0.834)**: About 83% of the variation in log departure delay is explained by log arrival delay alone.
 
--   **Statistical significance**: Very low p-values and a small residual standard error (\~0.479) confirm a strong model fit.
+-   **Statistical significance**: The extremely low p-value for log_arrival (\< 2e-16) provides strong evidence that arrival delay affects departure delay.
+    We can reject the hypothesis that arrival delay has no effect.
 
 The following plot visually confirms the strength of the relationship:
 
@@ -443,7 +445,7 @@ Most observations cluster tightly around the fitted line, reinforcing that **arr
 
 ## Step 2: Including Environmental and Temporal Context
 
-Next, we add external predictors – **log-transformed rainfall**, **temperature**, and **rush hour categories** – to see if delay propagation is influenced by weather or time of day.
+Next, we add external predictors – **log-transformed precipitation**, **temperature**, and **rush hour categories** – to see if delay propagation is influenced by weather or time of day.
 
 ```{r LM Extended Model, include=TRUE}
 model_extended <- lm(
@@ -455,13 +457,18 @@ summary(model_extended)
 
 ### Interpretation
 
--   `log_arrival` remains the dominant predictor.
+-   `log_arrival` remains the dominant predictor, with a coefficient of approximately 0.936.
+    This means that a **1% increase in arrival delay leads to an estimated 0.94% increase in departure delay** — a strong, nearly proportional relationship.
+    The p-value (p \< 2e-16) provides **strong evidence** for this effect.
 
--   Neither **rainfall** nor **temperature** has a significant effect.
+-   Rainfall and temperature have **no statistically significant effect**, as their p-values are far above conventional thresholds (p \> 0.3).
+    We **fail to reject** the null hypothesis that they influence delay propagation.
 
--   A small but statistically significant decrease in delay propagation is observed during the **evening rush hour**, but not during the morning peak.
+-   There is **moderate evidence** that the **evening rush hour** slightly reduces delay propagation.
+    The coefficient of -0.017 (p = 0.037) corresponds to an estimated **1.7% reduction in departure delay**, relative to non-rush hours.
+    The morning peak shows no significant effect.
 
-This suggests that delays are consistent across weather conditions and most times of day, but may be **slightly better absorbed in the evening**.
+This suggests that delay propagation is robust across most conditions, but slightly more resilient during the evening.
 
 The following plot illustrates the residuals of the extended model:
 
@@ -497,11 +504,17 @@ summary(model_luzern)
 
 ### Interpretation
 
--   Trains that **start in Luzern** have, on average, **11.2% lower departure delay**, controlling for other factors.
+-   `log_arrival` remains the **primary driver of departure delay**, with a coefficient of \~0.935.
+    This means that a **1% increase in arrival delay corresponds to an estimated 0.94% increase in departure delay** — reaffirming the near-proportional delay propagation observed in earlier models.
+    The effect is highly significant (p \< 2e-16).
 
--   Trains that **end in Luzern** show **12.5% lower delay propagation**, possibly due to better infrastructure or end-of-line recovery buffers.
+-   Rainfall and temperature continue to show **no statistically significant** effect (p \> 0.3), and we **fail to reject** the hypothesis that they influence delay propagation.
 
--   Again, **rain and temperature remain non-significant**, reinforcing that **operational station context matters more than weather**.
+-   The inclusion of station context provides new insight:
+
+    -   Trains that **start in Luzern** show a coefficient of -0.118, which translates to a **\~11.2% lower departure delay** relative to other stations (exp(-0.118) ≈ 0.888).
+
+    -   Trains that **end in Luzern** show a coefficient of -0.133, corresponding to a **\~12.5% reduction in delay** (exp(-0.133) ≈ 0.875).
 
 The residual plot below shows the model’s prediction consistency:
 
@@ -527,11 +540,14 @@ The residuals are broadly symmetric and centered around zero, indicating that th
 A limitation of this analysis lies in the **mismatch between data resolutions**: train delays are recorded at the stop level, while weather data is only available as **daily averages**.
 As a result, short-term or location-specific weather effects may be underestimated.
 
-Nonetheless, our models show that **arrival delays are the main driver** of departure delays, with nearly full propagation (1% increase in arrival delay → \~0.94% increase in departure delay).
-**Rainfall and temperature** have no significant effect, whereas **starting or ending in Luzern** significantly reduces delay propagation – highlighting Luzern's role as a stabilizing hub.
+Nonetheless, our models consistently show that **arrival delays are the dominant driver of departure delays**, with an estimated **elasticity of \~0.94**.
+This implies that a **1% increase in arrival delay leads to a \~0.94% increase in departure delay**, indicating **near-complete delay propagation**.
 
-These insights suggest that operational improvements should focus on **non-hub stations**, where delays are more likely to propagate.
-Enhancing recovery capacity or increasing buffer time in these areas may offer the best return in reducing system-wide disruptions.
+Rainfall and temperature show **no statistically significant effect** on delay propagation.
+In contrast, trains **starting or ending in Luzern** experience **\~11–13% lower departure delays**, suggesting that Luzern functions as a **stabilizing hub**, likely due to infrastructure or recovery capacity.
+
+These insights suggest that operational improvements should focus on **non-hub stations**, where delay propagation is more pronounced.
+Targeted increases in buffer time or recovery resources at these locations may yield the greatest reductions in network-wide disruptions.
 
 # Generalised Additive Model
 
@@ -823,7 +839,8 @@ Compared to the baseline (EXT), all other lines show significantly lower odds of
 For example, line IR has 91% lower odds of delay, S41 has 99% lower odds, and lines PE, R70, and S5 also show substantial reductions (93%, 91%, and 95% lower odds, respectively).
 This confirms that EXT is far more prone to delays than the other lines.
 
-As a next step, we simulate predictions using the GLM to estimate the likelihood of train delays, and then compare these simulated results with the actual dataset. We will have first a look at the mean of the simulated results:
+As a next step, we simulate predictions using the GLM to estimate the likelihood of train delays, and then compare these simulated results with the actual dataset.
+We will have first a look at the mean of the simulated results:
 
 ```{r simulation-glm-delay, include=FALSE, echo=FALSE}
 
@@ -856,7 +873,9 @@ ggplot(simulated_data, aes(x = reorder(LINIEN_TEXT, predicted_prob), y = predict
 mean(simulated_data$predicted_prob)
 ```
 
-The mean of the simulated data is 0.105. This is the reason why we cannot take a threshold of 0.5. This would result in nearly all cases being classified as non-delayed, since very few predicted probabilities exceed 0.5—ultimately leading to extremely poor sensitivity and almost no true positives.
+The mean of the simulated data is 0.105.
+This is the reason why we cannot take a threshold of 0.5.
+This would result in nearly all cases being classified as non-delayed, since very few predicted probabilities exceed 0.5—ultimately leading to extremely poor sensitivity and almost no true positives.
 
 Several thresholds were tested to determine the optimal cut-off point for classifying delays based on the predicted probabilities.
 Thresholds such as 0.03, 0.08, and 0.1 were evaluated, but they either led to a very low specificity or poor sensitivity.
@@ -1380,11 +1399,13 @@ Naturally, the more trains are in operation, the higher the likelihood of delays
 
 # Support Vector Machine Model
 
-In modern transportation systems, data incompleteness remains a persistent challenge. Within Zentralbahn's operational datasets, one recurring issue is the absence of station names (HALTESTELLEN_NAME), which impairs downstream analysis and monitoring.
+In modern transportation systems, data incompleteness remains a persistent challenge.
+Within Zentralbahn's operational datasets, one recurring issue is the absence of station names (HALTESTELLEN_NAME), which impairs downstream analysis and monitoring.
 
 As part of the broader data-driven initiative to improve performance and data quality—particularly in light of the November 2024 disruptions—this chapter focuses on addressing missing station data through predictive modeling.
 
-Specifically, we propose using Support Vector Machines (SVM), a well-established classification algorithm, to infer missing station names based on contextual features such as timestamps, weekday indicators, and route metadata. This modeling task is framed as a multi-class classification problem, aiming to recover labels for incomplete entries.
+Specifically, we propose using Support Vector Machines (SVM), a well-established classification algorithm, to infer missing station names based on contextual features such as timestamps, weekday indicators, and route metadata.
+This modeling task is framed as a multi-class classification problem, aiming to recover labels for incomplete entries.
 
 Our objective is to demonstrate a scalable methodology that not only enhances the quality of the November 2024 dataset but also provides a template for correcting similar issues in historical records, ultimately supporting SBB’s long-term data reliability goals.
 
@@ -1453,6 +1474,7 @@ d.svm <- d.trains %>%
 ## Binary Classification Reformulation
 
 ### Why We Switched to Binary Classification
+
 We defined a binary classification label that assigns the value `Luzern` when the station name matches Luzern, and `Other` otherwise.
 
 Our initial plan involved a multi-class SVM model to predict the full set of station names.
@@ -1509,7 +1531,8 @@ d.binary.final <- data.frame(
 Although the current model uses downsampling to balance the classes, alternative strategies such as class weighting or synthetic oversampling (e.g., SMOTE) could be considered in future work.
 These approaches preserve more training data and may lead to improved generalization, particularly in scenarios with evolving class distributions or in applications involving rare station patterns.
 
-The final dataset was prepared with balanced classes and scaled numerical features, enabling effective SVM training. In the next section, we evaluate model performance using cross-validation to ensure robustness and generalizability.
+The final dataset was prepared with balanced classes and scaled numerical features, enabling effective SVM training.
+In the next section, we evaluate model performance using cross-validation to ensure robustness and generalizability.
 
 ## SVM Model 1: Linear Kernel
 
@@ -1611,7 +1634,11 @@ This suggests that although the model catches most of the actual Luzern cases, i
 This misclassification behavior is expected due to the original class imbalance and overlapping features.
 
 ### Feature Importance
-To better understand the model's decision-making process, we analyzed feature importance based on the linear SVM’s learned weights. The top five most influential variables are shown in the figure below. Line identifiers such as `S5` and `IR` emerged as the strongest predictors, followed closely by directional routes involving Luzern (e.g., `Luzern_Giswil`, `Giswil_Luzern`). Weekday effects also showed some predictive value.
+
+To better understand the model's decision-making process, we analyzed feature importance based on the linear SVM’s learned weights.
+The top five most influential variables are shown in the figure below.
+Line identifiers such as `S5` and `IR` emerged as the strongest predictors, followed closely by directional routes involving Luzern (e.g., `Luzern_Giswil`, `Giswil_Luzern`).
+Weekday effects also showed some predictive value.
 
 These findings suggest that the model’s classification is primarily driven by spatial patterns encoded in the route and line metadata, with some influence from temporal structure.
 
@@ -1629,7 +1656,8 @@ plot(importance, top = 5, main = "Top 5 Most Influential Features (Linear SVM)")
 ```
 :::
 
-While the linear kernel offered interpretability and computational efficiency, its performance was constrained by overlapping feature distributions and the inherent limitations of linear separability. To address these constraints, we next explore a non-linear variant using the radial basis function (RBF) kernel.
+While the linear kernel offered interpretability and computational efficiency, its performance was constrained by overlapping feature distributions and the inherent limitations of linear separability.
+To address these constraints, we next explore a non-linear variant using the radial basis function (RBF) kernel.
 
 ## SVM Model 2: Radial Kernel
 
@@ -1691,7 +1719,11 @@ Given the added computational cost and limited performance gain, the RBF kernel 
 
 ## Model Comparison
 
-To systematically compare the linear and radial SVM models, we summarized their performance across several classification metrics: AUC, precision, recall, and F1 score. Both models were evaluated on the same dataset using the same cross-validation strategy to ensure a fair comparison. While the radial SVM achieved slightly higher values across all metrics — including a marginal AUC increase from 0.629 to 0.644 — both models exhibited limited overall discriminative power. The ROC curves show substantial overlap, with the radial model offering only a slight advantage in sensitivity at certain thresholds. Given this modest performance gain and the radial model’s higher computational cost, the linear SVM remains the more practical choice for time-sensitive or large-scale applications.
+To systematically compare the linear and radial SVM models, we summarized their performance across several classification metrics: AUC, precision, recall, and F1 score.
+Both models were evaluated on the same dataset using the same cross-validation strategy to ensure a fair comparison.
+While the radial SVM achieved slightly higher values across all metrics — including a marginal AUC increase from 0.629 to 0.644 — both models exhibited limited overall discriminative power.
+The ROC curves show substantial overlap, with the radial model offering only a slight advantage in sensitivity at certain thresholds.
+Given this modest performance gain and the radial model’s higher computational cost, the linear SVM remains the more practical choice for time-sensitive or large-scale applications.
 
 ```{r model-comparison, echo=FALSE, include=TRUE, eval=FALSE}
 # Build comparison table of performance metrics for both kernels
@@ -1807,14 +1839,25 @@ Achieving effective modularity, clarity, and efficiency requires a combination o
 
 # Conclusion
 
-This report set out to investigate the operational disruptions experienced by Zentralbahn in November 2024, with a focus on uncovering the root causes of winter-related performance bottlenecks and improving data reliability through predictive modeling. Through a structured exploration of various machine learning methods, the analysis identified critical patterns influencing both delay propagation and data integrity.
+This report set out to investigate the operational disruptions experienced by Zentralbahn in November 2024, with a focus on uncovering the root causes of winter-related performance bottlenecks and improving data reliability through predictive modeling.
+Through a structured exploration of various machine learning methods, the analysis identified critical patterns influencing both delay propagation and data integrity.
 
-Initial modeling using artificial neural networks confirmed that the dataset contained meaningful signals, even without prior domain knowledge. This served as a foundation for more interpretable approaches. Generalized Additive Models demonstrated that while temperature and precipitation exhibit statistically significant relationships with delay metrics, their explanatory power remains limited. In contrast, operational and temporal factors—such as specific train lines or time of day have a more pronounced influence.
+Initial modeling using artificial neural networks confirmed that the dataset contained meaningful signals, even without prior domain knowledge.
+This served as a foundation for more interpretable approaches.
+Generalized Additive Models demonstrated that while temperature and precipitation exhibit statistically significant relationships with delay metrics, their explanatory power remains limited.
+In contrast, operational and temporal factors—such as specific train lines or time of day have a more pronounced influence.
 
-Generalized Linear Models, particularly in the binomial and Poisson frameworks, highlighted the importance of line-specific characteristics and contextual variables like rush-hour periods. Notably, the reopening of the Meiringen–Interlaken line emerged as a key inflection point, significantly altering delay dynamics. Additionally, Luzern’s function as a stabilizing hub was consistently associated with reduced delay propagation, underscoring the strategic importance of hub infrastructure.
+Generalized Linear Models, particularly in the binomial and Poisson frameworks, highlighted the importance of line-specific characteristics and contextual variables like rush-hour periods.
+Notably, the reopening of the Meiringen–Interlaken line emerged as a key inflection point, significantly altering delay dynamics.
+Additionally, Luzern’s function as a stabilizing hub was consistently associated with reduced delay propagation, underscoring the strategic importance of hub infrastructure.
 
-Beyond performance modeling, the application of Support Vector Machines addressed a parallel objective: enhancing data quality. By formulating the recovery of missing station names as a classification problem, a methodological basis was established for scalable data imputation. Although performance was modest, the approach contributes to broader efforts to restore and maintain the integrity of historical transport records.
+Beyond performance modeling, the application of Support Vector Machines addressed a parallel objective: enhancing data quality.
+By formulating the recovery of missing station names as a classification problem, a methodological basis was established for scalable data imputation.
+Although performance was modest, the approach contributes to broader efforts to restore and maintain the integrity of historical transport records.
 
-The findings underscore the multifactorial nature of railway delays, wherein environmental conditions act as secondary factors to more decisive operational and infrastructural elements. While current models offer valuable insights, a substantial portion of variability remains unexplained. This suggests the potential benefit of integrating additional data sources—such as real-time operational logs, staffing levels, or infrastructure status—into future modeling efforts.
+The findings underscore the multifactorial nature of railway delays, wherein environmental conditions act as secondary factors to more decisive operational and infrastructural elements.
+While current models offer valuable insights, a substantial portion of variability remains unexplained.
+This suggests the potential benefit of integrating additional data sources—such as real-time operational logs, staffing levels, or infrastructure status—into future modeling efforts.
 
-In conclusion, the analysis not only confirms several hypotheses regarding winter bottlenecks but also provides a data-driven framework for identifying vulnerabilities and guiding operational decisions. By transforming raw transport and weather data into actionable insights, this work contributes to a more resilient and efficient transportation system of the Zentralbahn.
+In conclusion, the analysis not only confirms several hypotheses regarding winter bottlenecks but also provides a data-driven framework for identifying vulnerabilities and guiding operational decisions.
+By transforming raw transport and weather data into actionable insights, this work contributes to a more resilient and efficient transportation system of the Zentralbahn.
