@@ -1406,6 +1406,7 @@ d.trains <- read.csv("data/zentrahlbahn_final.csv", header = TRUE, stringsAsFact
 
 Initial exploratory analysis highlighted a large number of unique station labels and several variables with inconsistent or missing values.
 A summary of categorical distributions and missingness was conducted to determine preprocessing steps.
+
 ::: {style="text-align: center;"}
 ```{r initial-analysis, echo=TRUE, include=TRUE, fig.width=5, fig.height=3}
 # Visualize station frequency to identify high-volume locations
