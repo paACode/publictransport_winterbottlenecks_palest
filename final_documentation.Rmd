@@ -105,6 +105,7 @@ The data set has the following data types:
 | `w_temp_avg_c_Luzern` | Continuous    |
 | `FAELLT_AUS_TF`       | Binary        |
 
+
 While the table summarizes the original data types, some variables are adapted for specific models.
 `ANKUNFTDELAY_sec` and `ABFAHRTDELAY_sec`, though continuous, are treated as count data in the corresponding chapter where the model requires it.
 These variables are easily convertible by focusing solely on positive delay values and ignoring early arrivals or departures.
@@ -1421,8 +1422,8 @@ d.trains <- read.csv("data/zentrahlbahn_final.csv", header = TRUE, stringsAsFact
 
 Initial exploratory analysis highlighted a large number of unique station labels and several variables with inconsistent or missing values.
 A summary of categorical distributions and missingness was conducted to determine preprocessing steps.
-
-```{r initial-analysis, echo=TRUE, include=TRUE}
+::: {style="text-align: center;"}
+```{r initial-analysis, echo=TRUE, include=TRUE, fig.width=5, fig.height=3}
 # Visualize station frequency to identify high-volume locations
 library(ggplot2)
 station_counts <- sort(table(d.trains$HALTESTELLEN_NAME), decreasing = TRUE)
@@ -1432,6 +1433,7 @@ barplot(station_counts, las = 2, cex.names = 0.5, main = "Station Frequency", co
 abline(h = 3000, col = "red", lty = 2)
 legend("topright", legend = "Threshold = 3000", col = "red", lty = 2)
 ```
+:::
 
 To mitigate model complexity and class imbalance, we filtered the dataset to retain only stations with more than 3,000 observations.
 
@@ -1591,7 +1593,8 @@ In addition, we computed a confusion matrix to summarize classification outcomes
 Key metrics including precision, recall, and F1 score were calculated to quantify how well the model identified Luzern instances relative to all predictions made.
 These evaluations offer a balanced view of model performance, particularly under class imbalance.
 
-```{r roc-curve, message=FALSE, warning=FALSE, include=TRUE}
+::: {style="text-align: center;"}
+```{r roc-curve, message=FALSE, warning=FALSE, include=TRUE, out.width="70%"}
 # Evaluate model: ROC curve
 library(pROC)
 prob_preds <- predict(svm_linear_bin, d.binary.final, type = "prob")
@@ -1599,6 +1602,7 @@ prob_preds <- predict(svm_linear_bin, d.binary.final, type = "prob")
 #plot(roc_curve, main = "ROC Curve for Linear SVM")
 knitr::include_graphics("final_documentation_files/plots/roc-curve-1.png")
 ```
+:::
 
 ```{r SVM 1 confusion-matrix, include=TRUE}
 # Evaluate model: confusion matrix
@@ -1691,7 +1695,8 @@ conf_mat_rbf <- confusionMatrix(preds_rbf, d.binary.final$binary_station)
 
 ```
 
-```{r rbf-roc, include=TRUE}
+::: {style="text-align: center;"}
+```{r rbf-roc, include=TRUE, out.width="70%"}
 # print confusion matrix
 print(conf_mat_rbf)
 # Plot ROC curve for RBF SVM
@@ -1699,6 +1704,7 @@ print(conf_mat_rbf)
 knitr::include_graphics("final_documentation_files/plots/rbf-roc-1.png")
 svm_rbf_bin$bestTune
 ```
+:::
 
 ### Model Evaluation Results
 
@@ -1760,7 +1766,8 @@ legend("bottomright",
        lwd = 2)
 ```
 
-```{r model-comparison 2, include=TRUE}
+::: {style="text-align: center;"}
+```{r model-comparison 2, include=TRUE, out.width="70%"}
 # Manually defined values from prior evaluation
 auc_lin <- 0.629
 auc_rbf <- 0.644
@@ -1786,6 +1793,7 @@ knitr::kable(comparison, digits = 3)
 
 knitr::include_graphics("final_documentation_files/plots/model-comparison-1.png")
 ```
+:::
 
 ## Discussion
 
